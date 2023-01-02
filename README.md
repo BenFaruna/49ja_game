@@ -38,7 +38,7 @@ $ cd 49ja_game
 7. Add your database url as an environmental variable.
 
 On Windows using powershell
-```ps
+```powershell
 ps 49ja_game> $env:DB_URL='postgresql://postgres:<database-password>@localhost/<database-name>' 
 ```
 
