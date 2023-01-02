@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>49ja Data</title>
+</head>
+<body>
+  <a href="{{ url_for('home') }}"><h1>49ja Data - {{ category }}</h1></a>
+
+  <form action="{{ url_for('category') }}">
+    <label for="time">Time:</label>
+    <select name="time" id="time">
+      <option value=0>All</option>
+      <option value=0.5>30mins</option>
+      <option value=1.0>1hr</option>
+      <option value=4.0>4hr</option>
+      <option value=24.0>24hr</option>
+    </select>
+    <label for="occurrence">Occurence:</label>
+    <select name="occurrence" id="occurrence">
+      <option value=0>None</option>
+      <option value=3>3s</option>
+      <option value=4>4s</option>
+      <option value=5>5s</option>
+    </select>
+    <input class="submit" type="submit">
+  </form>
+  {% block body %}
+
+  {% endblock body %}
+</body>
+</html>

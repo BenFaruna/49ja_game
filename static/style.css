@@ -1,0 +1,73 @@
+body {
+    background-color: #111;
+    margin: 20px;
+    color: #fff;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:visited {
+    color: #fff;
+}
+
+h1 {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+select {
+    width: 70px;
+    height: 30px;
+    text-align: center;
+    border-radius: 5px;
+    margin: 0px 30px 0px 5px;
+    font-weight: bold;
+}
+
+input.submit {
+    height: 33px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+table {
+    max-width: 100%;
+}
+
+thead > tr > td {
+    font-size: large;
+    font-weight: bold;
+    text-align: center;
+}
+
+td {
+    width: max-content;
+    padding: 5px 10px;
+    text-align: center;
+    border: 10px solid #111;
+}
+
+td.data {
+    border-radius: 50px;
+}
+
+.red {
+    background-color: red;
+    color: white;
+}
+
+.green {
+    background-color: green;
+    color: white;
+}
+
+.blue {
+    background-color: blue;
+    color: white;
+}
+
+.yellow {
+    background-color: yellow;
+    color: black;
+}

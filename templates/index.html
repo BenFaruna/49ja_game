@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<table>
+  <thead>
+    <tr>
+      <td>id</td>
+      <td>date</td>
+      <td>first</td>
+      <td>second</td>
+      <td>third</td>
+      <td>fourth</td>
+      <td>fifth</td>
+      <td>sixth</td>
+      <td>colour</td>
+      <td>hi_lo_mid</td>
+      <td>total</td>
+      <td>red</td>
+      <td>green</td>
+      <td>blue</td>
+      <td>yellow</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for game_data in data %}
+      <tr>
+        <td>{{ game_data['id'] }}</td>
+        <td>{{ game_data['date'].strftime("%Y-%m-%dT%H:%M:%S") }}</td>
+        <td class="data {{ color(game_data['first'])[1]|lower }}">{{ game_data['first'] }}</td>
+        <td class="data {{ color(game_data['second'])[1]|lower }}">{{ game_data['second'] }}</td>
+        <td class="data {{ color(game_data['third'])[1]|lower }}">{{ game_data['third'] }}</td>
+        <td class="data {{ color(game_data['fourth'])[1]|lower }}">{{ game_data['fourth'] }}</td>
+        <td class="data {{ color(game_data['fifth'])[1]|lower }}">{{ game_data['fifth'] }}</td>
+        <td class="data {{ color(game_data['sixth'])[1]|lower }}">{{ game_data['sixth'] }}</td>
+        <td class="{{ game_data['colour']|lower }}">{{ game_data['colour'] }}</td>
+        <td>{{ game_data['hi_lo_mid'] }}</td>
+        <td>{{ game_data['total'] }}</td>
+        <td class="red">{{ game_data['r_count'] }}</td>
+        <td class="green">{{ game_data['g_count'] }}</td>
+        <td class="blue">{{ game_data['b_count'] }}</td>
+        <td>{{ game_data['y_count'] }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock body %}
