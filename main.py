@@ -34,7 +34,6 @@ def main():
     time.sleep(5)
     current_id = check_id_of_current_draw(driver, 0)
 
-# if __name__ == '__main__':
     while True:
         current_id = check_id_of_current_draw(driver, current_id)
         current_draw = get_ball_values(driver)
@@ -62,3 +61,7 @@ def main():
 
         game_data = GameData(**data)
         game_data.save()
+
+
+if __name__ == "__main__":
+    main()

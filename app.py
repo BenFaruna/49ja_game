@@ -4,10 +4,10 @@ from flask import Flask, render_template, request
 
 from models import storage
 from helper_functions import decide_number_color
-from main import main
+# from main import main
 
 app = Flask(__name__)
-thread = Thread(target=main)
+# thread = Thread(target=main)
 
 @app.route('/')
 def home():
@@ -43,5 +43,5 @@ def category():
 
 
 if __name__ == '__main__':
-    thread.start()
-    app.run(thread=True, debug=True)
+    # thread.start()
+    app.run(threaded=True, debug=True)
