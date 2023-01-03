@@ -4,10 +4,11 @@ from flask import Flask, render_template, request
 
 from models import storage
 from helper_functions import decide_number_color
-# from main import main
+from main import main
 
+thread = Thread(target=main)
+thread.start()
 app = Flask(__name__)
-# thread = Thread(target=main)
 
 @app.route('/')
 def home():
