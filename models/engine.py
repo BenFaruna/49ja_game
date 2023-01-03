@@ -20,7 +20,7 @@ class DBStorage:
 
     def __init__(self):
         """Instantiate a DBStorage object"""
-        db_url = getenv("DB_URL")
+        db_url = getenv("DB_URL", "sqlite:///game_data.db")
         self.__engine = create_engine(db_url)
         # Base.metadata.drop_all(self.__engine)
 

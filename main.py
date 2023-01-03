@@ -21,19 +21,20 @@ _options.add_argument('--no-sandbox')
 _options.add_argument('--disable-dev-sh-usage')
 
 
+def main():
 
-url = "https://logigames.bet9ja.com/Games/Launcher?gameId=11000&provider=0&sid=&pff=1&skin=201"
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=_options)
+    url = "https://logigames.bet9ja.com/Games/Launcher?gameId=11000&provider=0&sid=&pff=1&skin=201"
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=_options)
 
 
-wait = WebDriverWait(driver, 120)
-driver.get(url)
+    wait = WebDriverWait(driver, 120)
+    driver.get(url)
 
-wait.until(ec.presence_of_all_elements_located((By.CSS_SELECTOR, '.draws-mask')))
-time.sleep(5)
-current_id = check_id_of_current_draw(driver, 0)
+    wait.until(ec.presence_of_all_elements_located((By.CSS_SELECTOR, '.draws-mask')))
+    time.sleep(5)
+    current_id = check_id_of_current_draw(driver, 0)
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     while True:
         current_id = check_id_of_current_draw(driver, current_id)
         current_draw = get_ball_values(driver)
