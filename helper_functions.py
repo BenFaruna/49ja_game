@@ -1,4 +1,4 @@
-def decide_number_color(num: int) -> tuple[int, str]:
+def decide_number_color(num: int):
     """
     From number decide the color in grid
     :param num: number that will be used to determine color
@@ -17,7 +17,7 @@ def decide_number_color(num: int) -> tuple[int, str]:
             return num, grids[tup]
 
 
-def total_category(nums: list) -> tuple[int, str]:
+def total_category(nums: list):
     """
     Gets the total of numbers passed to the function and return the category
     :param nums: variable arguments passed, should contain integers only
@@ -32,7 +32,7 @@ def total_category(nums: list) -> tuple[int, str]:
         return total, "Lo"
 
 
-def color_count(nums: list) -> dict:
+def color_count(nums: list):
     """
     from the results get the color count and winning color from the count
     :param nums: variable arguments passed
@@ -52,7 +52,7 @@ def color_count(nums: list) -> dict:
     return color_num
 
 
-def color_decision(color_num: dict) -> str:
+def color_decision(color_num: dict):
     """
     function decides the highest color in a dictionary and returns the highest color, or None if two are equal
     :param color_num: a dictionary containing color count

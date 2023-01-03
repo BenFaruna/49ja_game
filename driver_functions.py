@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # from main import driver as web_driver, wait
 
 
-def check_id_of_current_draw(driver, current_draw: int) -> int:
+def check_id_of_current_draw(driver, current_draw: int):
     """
     function checks the id of the current draw and permits movement of program when the draw has changed
     :param driver: webdriver to be used for locating elements
@@ -26,7 +26,7 @@ def check_id_of_current_draw(driver, current_draw: int) -> int:
     return temp
 
 
-def get_ball_values(driver) -> list[int]:
+def get_ball_values(driver):
     """
     function to get the values of the ball from the interface
     :param driver: webdriver to be used for locating elements
