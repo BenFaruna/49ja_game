@@ -1,13 +1,12 @@
-from threading import Thread
+from threading import Event, Thread
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 from models import storage
 from helper_functions import decide_number_color
-from main import main
+from main import main, e
 
 thread = Thread(target=main)
-thread.start()
 app = Flask(__name__)
 
 @app.route('/')
@@ -41,6 +40,24 @@ def category():
     else:
         data = temp_data
     return render_template('index.html', data=data, category=category, color=decide_number_color)
+
+
+@app.route('/start_scraping')
+def start():
+    global thread
+
+    if not thread.is_alive():
+        thread = Thread(target=main)
+        e.clear()
+        thread.start()
+    return redirect(url_for('home'))
+
+
+@app.route('/stop_scraping')
+def stop():
+    e.set()
+    return redirect(url_for('home'))
+
 
 
 if __name__ == '__main__':

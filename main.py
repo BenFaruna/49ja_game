@@ -1,5 +1,6 @@
 import os
 import time
+from threading import Event
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -19,6 +20,8 @@ _options.binary_location = os.environ.get('GOOGLE_CHROME_BIN')
 _options.add_argument('--headless')
 _options.add_argument('--no-sandbox')
 _options.add_argument('--disable-dev-sh-usage')
+
+e = Event()
 
 
 def main():
@@ -61,6 +64,10 @@ def main():
 
         game_data = GameData(**data)
         game_data.save()
+    
+        if e.is_set():
+            print('Scraping is stopping')
+            break
 
 
 if __name__ == "__main__":
