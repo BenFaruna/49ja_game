@@ -3,4 +3,4 @@ gunicorn==20.1.0
 psycopg2-binary==2.9.5
 selenium==4.7.2
 SQLAlchemy==1.4.45
-webdriver-manager==3.8.5
+chromedriver-binary==<chrome-version>

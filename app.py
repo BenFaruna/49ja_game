@@ -44,4 +44,4 @@ def category():
 
 if __name__ == '__main__':
     thread.start()
-    app.run(thread=True, debug=True)
+    app.run()

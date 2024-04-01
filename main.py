@@ -1,13 +1,15 @@
 import os
 import time
 
+import chromedriver_binary
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-from webdriver_manager.chrome import ChromeDriverManager
+# from webdriver_manager.chrome import ChromeDriverManager
 
 from driver_functions import check_id_of_current_draw, get_ball_values
 from helper_functions import color_count, color_decision, total_category
@@ -16,7 +18,7 @@ from models.game_data import GameData
 # Driver Setup
 _options = webdriver.ChromeOptions()
 _options.binary_location = os.environ.get('GOOGLE_CHROME_BIN')
-_options.add_argument('--headless')
+_options.add_argument('--headless') # comment this out if you want to see the browser
 _options.add_argument('--no-sandbox')
 _options.add_argument('--disable-dev-sh-usage')
 
@@ -24,7 +26,7 @@ _options.add_argument('--disable-dev-sh-usage')
 def main():
 
     url = "https://logigames.bet9ja.com/Games/Launcher?gameId=11000&provider=0&sid=&pff=1&skin=201"
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=_options)
+    driver = webdriver.Chrome(service=Service(), options=_options)
 
 
     wait = WebDriverWait(driver, 120)

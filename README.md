@@ -30,7 +30,7 @@ $ cd 49ja_game
 
 5. (optional) You can create a virtual environment by following the steps outlined [here](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/). Activate the virtual environment.
 
-6. Install packages needed for the application to run using the command
+6. Before the installation of the packages, open `requirements.txt` and change <chrome-version> to the version of your chrome browser. Install packages needed for the application to run using the command
 ```
 49ja_game$ pip install -r requirements.txt
 ```
