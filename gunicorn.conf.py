@@ -6,7 +6,7 @@ from logger import get_logger
 logger = get_logger("gunicorn_master")
 
 # Server Socket
-bind = "0.0.0.0:5050"
+bind = "0.0.0.0:5000"
 workers = 1
 timeout = 120
 
