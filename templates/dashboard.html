@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | 49ja Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 class="page-title">Analytics Dashboard</h1>
+    <p class="page-subtitle">Real-time statistics for timeframe: <strong style="color: var(--accent-cyan);">{{ category_label }}</strong></p>
+  </div>
+</div>
+
+<!-- Dashboard Time Filter Bar -->
+<div class="card filter-card" style="margin-bottom: 24px;">
+  <form action="{{ url_for('home') }}" method="GET" class="filter-form">
+    <div class="filter-group">
+      <label for="time" class="filter-label">🕒 Analytics Time Filter:</label>
+      <select name="time" id="time" onchange="this.form.submit()">
+        <option value="0" {% if selected_time == 0 %}selected{% endif %}>All Time</option>
+        <option value="0.5" {% if selected_time == 0.5 %}selected{% endif %}>Last 30 Minutes</option>
+        <option value="1.0" {% if selected_time == 1.0 %}selected{% endif %}>Last 1 Hour</option>
+        <option value="4.0" {% if selected_time == 4.0 %}selected{% endif %}>Last 4 Hours</option>
+        <option value="24.0" {% if selected_time == 24.0 %}selected{% endif %}>Last 24 Hours</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Hero Banner: Latest Live Draw -->
+{% set latest = analytics.latest_draw %}
+<div class="hero-banner" id="heroBanner">
+  <div class="hero-info">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+      <span class="live-indicator"><span class="pulse-dot"></span> LATEST DRAW</span>
+      <span class="hero-meta" id="latestDrawId">#{{ latest.id if latest else 'N/A' }}</span>
+      <span class="hero-meta local-time" id="latestDate" data-utc="{{ latest.date.strftime('%Y-%m-%dT%H:%M:%SZ') if latest else '' }}">
+        {{ latest.date.strftime("%Y-%m-%d %H:%M:%S") if latest else '' }}
+      </span>
+    </div>
+    <h2>Winning Balls & Summary</h2>
+    <div style="display: flex; gap: 12px; margin-top: 8px;">
+      <span class="badge {% if latest and latest.hi_lo_mid == 'Hi' %}badge-hi{% elif latest and latest.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}" id="latestHlm">
+        Range: {{ latest.hi_lo_mid if latest else 'N/A' }} (Total: <span id="latestTotal">{{ latest.total if latest else 0 }}</span>)
+      </span>
+      <span class="badge badge-hi" id="latestColor" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
+        Dominant: {{ latest.colour if latest else 'N/A' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="balls-row" id="latestBalls">
+    {% if latest %}
+      {% for b in [latest.first, latest.second, latest.third, latest.fourth, latest.fifth, latest.sixth] %}
+        {% set ball_clr = color(b)[1]|lower %}
+        <div class="ball ball-large ball-{{ ball_clr }}">{{ b }}</div>
+      {% endfor %}
+    {% else %}
+      <div style="color: var(--text-muted);">No draw data available yet</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- KPI Summary Cards Grid -->
+<div class="stats-grid">
+  <!-- Card 1: Total Draws -->
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span>TOTAL DRAWS ({{ category_label }})</span>
+      <span>📊</span>
+    </div>
+    <div class="stat-value" id="statTotalDraws">{{ analytics.total_draws }}</div>
+    <div class="stat-subtext">Filtered by active timeframe</div>
+  </div>
+
+  <!-- Card 2: Average Total -->
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span>AVERAGE DRAW TOTAL</span>
+      <span>📈</span>
+    </div>
+    <div class="stat-value" id="statAvgTotal">{{ analytics.avg_total }}</div>
+    <div class="stat-subtext">Theoretical mid-range baseline ~150</div>
+  </div>
+
+  <!-- Card 3: Range Split -->
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span>HI / LO / MID SPLIT</span>
+      <span>⚖️</span>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 8px;">
+      <span class="badge badge-hi">Hi: {{ analytics.hi_lo_mid.Hi }}</span>
+      <span class="badge badge-lo">Lo: {{ analytics.hi_lo_mid.Lo }}</span>
+      <span class="badge badge-mid">Mid: {{ analytics.hi_lo_mid.Mid }}</span>
+    </div>
+    <div class="stat-subtext" style="margin-top: 12px;">Category totals distribution</div>
+  </div>
+
+  <!-- Card 4: Color Frequency -->
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span>DOMINANT COLOR WINS</span>
+      <span>🎨</span>
+    </div>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+      <span class="pill pill-red">Red: {{ analytics.color_counts.Red }}</span>
+      <span class="pill pill-blue">Blue: {{ analytics.color_counts.Blue }}</span>
+      <span class="pill pill-green">Green: {{ analytics.color_counts.Green }}</span>
+      <span class="pill pill-yellow">Yellow: {{ analytics.color_counts.Yellow }}</span>
+    </div>
+    <div class="stat-subtext" style="margin-top: 12px;">Color round victories</div>
+  </div>
+</div>
+
+<!-- Color Distribution Visual Bar -->
+<div class="card" style="margin-bottom: 28px;">
+  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Dominant Color Distribution % ({{ category_label }})</h3>
+  <p style="font-size: 0.85rem; color: var(--text-muted);">Proportion of winning dominant colors in timeframe</p>
+  
+  <div class="progress-container">
+    <div class="progress-bar-bg">
+      <div class="progress-segment segment-red" style="width: {{ analytics.color_percentages.Red }}%;"></div>
+      <div class="progress-segment segment-blue" style="width: {{ analytics.color_percentages.Blue }}%;"></div>
+      <div class="progress-segment segment-green" style="width: {{ analytics.color_percentages.Green }}%;"></div>
+      <div class="progress-segment segment-yellow" style="width: {{ analytics.color_percentages.Yellow }}%;"></div>
+    </div>
+  </div>
+
+  <div class="legend-grid">
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Red: {{ analytics.color_percentages.Red }}%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Blue: {{ analytics.color_percentages.Blue }}%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Green: {{ analytics.color_percentages.Green }}%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#eab308;"></div> Yellow: {{ analytics.color_percentages.Yellow }}%</div>
+  </div>
+</div>
+
+<!-- Ball Frequency Heatmap (1 - 49) -->
+<div class="card" style="margin-bottom: 28px;">
+  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Ball Frequency Heatmap (Numbers 1 – 49)</h3>
+  <p style="font-size: 0.85rem; color: var(--text-muted);">Total occurrences of each ball number for {{ category_label }}</p>
+
+  <div class="heatmap-grid">
+    {% for num in range(1, 50) %}
+      {% set clr_name = color(num)[1]|lower %}
+      <div class="heatmap-cell">
+        <div class="heatmap-num" style="color: {% if clr_name == 'red' %}#f87171{% elif clr_name == 'blue' %}#60a5fa{% elif clr_name == 'green' %}#34d399{% else %}#facc15{% endif %};">
+          {{ num }}
+        </div>
+        <div class="heatmap-count" id="heatmap-count-{{ num }}">{{ analytics.ball_freq[num] }}x</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent 10 Draws Table Preview -->
+<div class="card">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+    <div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff;">Recent Draws Preview</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Latest 10 recorded game outcomes</p>
+    </div>
+    <a href="{{ url_for('history') }}" class="btn-primary">View Full History →</a>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Draw ID</th>
+          <th>Date & Time</th>
+          <th>Balls Drawn</th>
+          <th>Dominant Color</th>
+          <th>Range</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_draws %}
+          <tr>
+            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">#{{ row.id }}</td>
+            <td style="color: var(--text-muted);" class="local-time" data-utc="{{ row.date.strftime('%Y-%m-%dT%H:%M:%SZ') }}">
+              {{ row.date.strftime("%Y-%m-%d %H:%M:%S") }}
+            </td>
+            <td>
+              <div class="balls-row">
+                {% for b in [row.first, row.second, row.third, row.fourth, row.fifth, row.sixth] %}
+                  {% set b_clr = color(b)[1]|lower %}
+                  <div class="ball ball-{{ b_clr }}">{{ b }}</div>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              <span class="pill pill-{{ row.colour|lower }}">
+                {{ row.colour }}
+              </span>
+            </td>
+            <td>
+              <span class="badge {% if row.hi_lo_mid == 'Hi' %}badge-hi{% elif row.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}">
+                {{ row.hi_lo_mid }}
+              </span>
+            </td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">{{ row.total }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Live Auto-Refresh Script -->
+<script>
+  const currentTimeFilter = {{ selected_time }};
+  function pollLatestStats() {
+    fetch('/api/stats?time=' + currentTimeFilter)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('statTotalDraws').innerText = data.total_draws;
+          document.getElementById('statAvgTotal').innerText = data.avg_total;
+
+          // Update heatmap cells
+          if (data.ball_freq) {
+            for (let i = 1; i <= 49; i++) {
+              const countElem = document.getElementById('heatmap-count-' + i);
+              if (countElem) {
+                countElem.innerText = (data.ball_freq[i] || 0) + 'x';
+              }
+            }
+          }
+
+          if (data.latest_draw) {
+            const latest = data.latest_draw;
+            document.getElementById('latestDrawId').innerText = '#' + latest.id;
+            document.getElementById('latestDate').innerText = formatLocalTime(latest.date);
+            document.getElementById('latestTotal').innerText = latest.total;
+            document.getElementById('latestHlm').innerText = 'Range: ' + latest.hi_lo_mid + ' (Total: ' + latest.total + ')';
+            document.getElementById('latestColor').innerText = 'Dominant: ' + latest.colour;
+
+            // Update balls
+            const ballsContainer = document.getElementById('latestBalls');
+            if (ballsContainer && latest.balls) {
+              let html = '';
+              latest.balls.forEach(val => {
+                let clr = 'unknown';
+                const num = parseInt(val);
+                const redTup = [1, 13, 25, 37, 4, 16, 28, 40, 7, 19, 31, 43, 10, 22, 34, 46];
+                const blueTup = [2, 14, 26, 38, 5, 17, 29, 41, 8, 20, 32, 44, 11, 23, 35, 47];
+                const greenTup = [3, 15, 27, 39, 6, 18, 30, 42, 9, 21, 33, 45, 12, 24, 36, 48];
+                if (redTup.includes(num)) clr = 'red';
+                else if (blueTup.includes(num)) clr = 'blue';
+                else if (greenTup.includes(num)) clr = 'green';
+                else if (num === 49) clr = 'yellow';
+
+                html += `<div class="ball ball-large ball-${clr}">${num}</div>`;
+              });
+              ballsContainer.innerHTML = html;
+            }
+          }
+        }
+      })
+      .catch(err => console.log("Poll error:", err));
+  }
+
+  setInterval(pollLatestStats, 5000);
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@
 """
 Contains the class DBStorage
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getenv
 
 from sqlalchemy import create_engine
@@ -41,11 +41,12 @@ class DBStorage:
             return {}
 
     def time_diff(self, hours=1.0):
-        """query on the current database session based of time difference"""
+        """query on the current database session based on relative UTC time difference"""
         new_dict = {}
         try:
+            utc_cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=float(hours))
             objs = self.__session.query(GameData).filter(
-                GameData.date >= (datetime.now() - timedelta(hours=float(hours)))
+                GameData.date >= utc_cutoff
             )
             for obj in objs:
                 key = obj.__class__.__name__ + "." + str(obj.id)

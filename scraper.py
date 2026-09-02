@@ -1,15 +1,16 @@
 import time
+
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.firefox import GeckoDriverManager
 
 from driver_functions import check_id_of_current_draw, get_ball_values
 from helper_functions import color_count, color_decision, total_category
-from models.game_data import GameData
 from logger import get_logger
+from models.game_data import GameData
 
 logger = get_logger("scraper")
 
@@ -18,6 +19,10 @@ _options = webdriver.FirefoxOptions()
 _options.add_argument("--headless")
 _options.add_argument("--no-sandbox")
 _options.add_argument("--disable-dev-sh-usage")
+_options.set_preference("permissions.default.image", 2)  # Block image loading
+_options.set_preference(
+    "permissions.default.stylesheet", 2
+)  # Block CSS loading (optional)
 
 
 def create_driver():

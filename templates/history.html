@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Draw History | 49ja Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 class="page-title">Draw History</h1>
+    <p class="page-subtitle">Filter criteria: <strong style="color: var(--accent-cyan);">{{ category }}</strong></p>
+  </div>
+  <div class="badge badge-hi" style="font-size: 0.9rem; padding: 6px 14px;">
+    Total Filtered: {{ total_items }} Draws
+  </div>
+</div>
+
+<!-- Filter Controls Bar -->
+<div class="card filter-card">
+  <form action="{{ url_for('history') }}" method="GET" class="filter-form">
+    <div class="filter-group">
+      <label for="time" class="filter-label">🕒 Time Window:</label>
+      <select name="time" id="time">
+        <option value="0" {% if selected_time == 0 %}selected{% endif %}>All Time</option>
+        <option value="0.5" {% if selected_time == 0.5 %}selected{% endif %}>30 Minutes</option>
+        <option value="1.0" {% if selected_time == 1.0 %}selected{% endif %}>1 Hour</option>
+        <option value="4.0" {% if selected_time == 4.0 %}selected{% endif %}>4 Hours</option>
+        <option value="24.0" {% if selected_time == 24.0 %}selected{% endif %}>24 Hours</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="occurrence" class="filter-label">🎨 Color Match:</label>
+      <select name="occurrence" id="occurrence">
+        <option value="0" {% if selected_occurrence == 0 %}selected{% endif %}>All Matches</option>
+        <option value="3" {% if selected_occurrence == 3 %}selected{% endif %}>3 Same Color (3s)</option>
+        <option value="4" {% if selected_occurrence == 4 %}selected{% endif %}>4 Same Color (4s)</option>
+        <option value="5" {% if selected_occurrence == 5 %}selected{% endif %}>5 Same Color (5s)</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="per_page" class="filter-label">📄 Per Page:</label>
+      <select name="per_page" id="per_page">
+        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+        <option value="100" {% if per_page == 100 %}selected{% endif %}>100 (Max)</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn-primary">Apply Filters</button>
+  </form>
+</div>
+
+<!-- Full Scraped Data Table -->
+<div class="card">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Draw ID</th>
+          <th>Date & Time</th>
+          <th>Balls Drawn</th>
+          <th>Dominant Color</th>
+          <th>Range</th>
+          <th>Total</th>
+          <th>Red</th>
+          <th>Green</th>
+          <th>Blue</th>
+          <th>Yellow</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if data %}
+          {% for game_data in data %}
+            <tr>
+              <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">
+                #{{ game_data['id'] }}
+              </td>
+              <td style="color: var(--text-muted);" class="local-time" data-utc="{{ game_data['date'].strftime('%Y-%m-%dT%H:%M:%SZ') }}">
+                {{ game_data['date'].strftime("%Y-%m-%d %H:%M:%S") }}
+              </td>
+              <td>
+                <div class="balls-row">
+                  {% for b in [game_data['first'], game_data['second'], game_data['third'], game_data['fourth'], game_data['fifth'], game_data['sixth']] %}
+                    {% set b_clr = color(b)[1]|lower %}
+                    <div class="ball ball-{{ b_clr }}">{{ b }}</div>
+                  {% endfor %}
+                </div>
+              </td>
+              <td>
+                <span class="pill pill-{{ game_data['colour']|lower }}">
+                  {{ game_data['colour'] }}
+                </span>
+              </td>
+              <td>
+                <span class="badge {% if game_data['hi_lo_mid'] == 'Hi' %}badge-hi{% elif game_data['hi_lo_mid'] == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}">
+                  {{ game_data['hi_lo_mid'] }}
+                </span>
+              </td>
+              <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+                {{ game_data['total'] }}
+              </td>
+              <td style="color: #f87171; font-weight: 700;">{{ game_data['r_count'] }}</td>
+              <td style="color: #34d399; font-weight: 700;">{{ game_data['g_count'] }}</td>
+              <td style="color: #60a5fa; font-weight: 700;">{{ game_data['b_count'] }}</td>
+              <td style="color: #facc15; font-weight: 700;">{{ game_data['y_count'] }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              No draw history records found for the selected filter criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls Bar -->
+  {% if total_items > 0 %}
+    <div class="pagination-container">
+      <div class="pagination-info">
+        Showing <strong>{{ start_item }}</strong> to <strong>{{ end_item }}</strong> of <strong>{{ total_items }}</strong> draws
+        (Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>)
+      </div>
+
+      <ul class="pagination">
+        <!-- Previous Button -->
+        <li>
+          {% if has_prev %}
+            <a href="{{ url_for('history', page=page-1, per_page=per_page, time=selected_time, occurrence=selected_occurrence) }}" class="page-link">
+              ← Previous
+            </a>
+          {% else %}
+            <span class="page-link disabled">← Previous</span>
+          {% endif %}
+        </li>
+
+        <!-- Current Page Indicator -->
+        <li>
+          <span class="page-link active">{{ page }} / {{ total_pages }}</span>
+        </li>
+
+        <!-- Next Button -->
+        <li>
+          {% if has_next %}
+            <a href="{{ url_for('history', page=page+1, per_page=per_page, time=selected_time, occurrence=selected_occurrence) }}" class="page-link">
+              Next →
+            </a>
+          {% else %}
+            <span class="page-link disabled">Next →</span>
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -2,36 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <title>49ja Data</title>
+  <title>{% block title %}49ja Analytics Dashboard{% endblock %}</title>
+  <script>
+    function formatLocalTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        if (!isoStr.endsWith('Z') && !isoStr.includes('+')) {
+          isoStr += 'Z';
+        }
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.local-time').forEach(el => {
+        const rawIso = el.getAttribute('data-utc');
+        if (rawIso) {
+          el.innerText = formatLocalTime(rawIso);
+        }
+      });
+    });
+  </script>
 </head>
 <body>
-  <a href="{{ url_for('home') }}"><h1>49ja Data - {{ category }}</h1></a>
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <a href="{{ url_for('home') }}" class="nav-brand">
+      🎯 49ja <span>Analytics</span>
+    </a>
 
-  <form action="{{ url_for('category') }}">
-    <label for="time">Time:</label>
-    <select name="time" id="time">
-      <option value=0>All</option>
-      <option value=0.5>30mins</option>
-      <option value=1.0>1hr</option>
-      <option value=4.0>4hr</option>
-      <option value=24.0>24hr</option>
-    </select>
-    <label for="occurrence">Occurence:</label>
-    <select name="occurrence" id="occurrence">
-      <option value=0>None</option>
-      <option value=3>3s</option>
-      <option value=4>4s</option>
-      <option value=5>5s</option>
-    </select>
-    <input class="submit" type="submit">
-  </form>
-  {% block body %}
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}" class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}">
+        📊 Dashboard
+      </a>
+      <a href="{{ url_for('history') }}" class="nav-link {% if active_tab == 'history' %}active{% endif %}">
+        📜 Draw History
+      </a>
+    </nav>
 
-  {% endblock body %}
+    <div class="live-indicator">
+      <span class="pulse-dot"></span>
+      Scraper Live
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    {% block content %}
+    {% endblock %}
+  </main>
 </body>
 </html>
