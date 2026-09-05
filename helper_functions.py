@@ -95,7 +95,13 @@ def compute_analytics(data_list: list) -> dict:
             "total_draws": 0,
             "latest_draw": None,
             "color_counts": {"Red": 0, "Blue": 0, "Green": 0, "Yellow": 0, "None": 0},
-            "color_percentages": {"Red": 0, "Blue": 0, "Green": 0, "Yellow": 0},
+            "color_percentages": {
+                "Red": 0,
+                "Blue": 0,
+                "Green": 0,
+                "Yellow": 0,
+                "None": 0,
+            },
             "hi_lo_mid": {"Hi": 0, "Lo": 0, "Mid": 0},
             "ball_freq": {n: 0 for n in range(1, 50)},
             "avg_total": 0,
@@ -116,14 +122,21 @@ def compute_analytics(data_list: list) -> dict:
 
         totals_sum += item.total
 
-        for ball_val in [item.first, item.second, item.third, item.fourth, item.fifth, item.sixth]:
+        for ball_val in [
+            item.first,
+            item.second,
+            item.third,
+            item.fourth,
+            item.fifth,
+            item.sixth,
+        ]:
             if 1 <= ball_val <= 49:
                 ball_freq[ball_val] += 1
 
     color_percentages = {
         col: round((cnt / total_draws) * 100, 1)
         for col, cnt in color_counts.items()
-        if col != "None"
+        # if col != "None"
     }
 
     return {

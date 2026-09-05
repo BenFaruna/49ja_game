@@ -8,16 +8,31 @@
     <h1 class="page-title">Draw History</h1>
     <p class="page-subtitle">Filter criteria: <strong style="color: var(--accent-cyan);">{{ category }}</strong></p>
   </div>
-  <div class="badge badge-hi" style="font-size: 0.9rem; padding: 6px 14px;">
-    Total Filtered: {{ total_items }} Draws
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <button type="button" class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
+    <div class="badge badge-hi" style="font-size: 0.9rem; padding: 6px 14px;">
+      Total Filtered: {{ total_items }} Draws
+    </div>
   </div>
 </div>
 
 <!-- Filter Controls Bar -->
 <div class="card filter-card">
-  <form action="{{ url_for('history') }}" method="GET" class="filter-form">
+  <form action="{{ url_for('history') }}" method="GET" class="filter-form" id="history-filter-form">
+    <input type="hidden" name="tz_offset" id="tz_offset" value="">
+
     <div class="filter-group">
-      <label for="time" class="filter-label">🕒 Time Window:</label>
+      <label for="start_datetime" class="filter-label">📅 From:</label>
+      <input type="datetime-local" name="start_datetime" id="start_datetime" value="{{ selected_start }}" class="datetime-input">
+    </div>
+
+    <div class="filter-group">
+      <label for="end_datetime" class="filter-label">📅 To:</label>
+      <input type="datetime-local" name="end_datetime" id="end_datetime" value="{{ selected_end }}" class="datetime-input">
+    </div>
+
+    <div class="filter-group">
+      <label for="time" class="filter-label">🕒 Window:</label>
       <select name="time" id="time">
         <option value="0" {% if selected_time == 0 %}selected{% endif %}>All Time</option>
         <option value="0.5" {% if selected_time == 0.5 %}selected{% endif %}>30 Minutes</option>
@@ -47,7 +62,10 @@
       </select>
     </div>
 
-    <button type="submit" class="btn-primary">Apply Filters</button>
+    <div class="filter-actions" style="display: flex; gap: 10px; align-items: center;">
+      <button type="submit" class="btn-primary">Apply Filters</button>
+      <a href="{{ url_for('history') }}" class="btn-reset">Reset</a>
+    </div>
   </form>
 </div>
 
@@ -129,7 +147,7 @@
         <!-- Previous Button -->
         <li>
           {% if has_prev %}
-            <a href="{{ url_for('history', page=page-1, per_page=per_page, time=selected_time, occurrence=selected_occurrence) }}" class="page-link">
+            <a href="{{ url_for('history', page=page-1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}" class="page-link">
               ← Previous
             </a>
           {% else %}
@@ -145,7 +163,7 @@
         <!-- Next Button -->
         <li>
           {% if has_next %}
-            <a href="{{ url_for('history', page=page+1, per_page=per_page, time=selected_time, occurrence=selected_occurrence) }}" class="page-link">
+            <a href="{{ url_for('history', page=page+1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}" class="page-link">
               Next →
             </a>
           {% else %}
@@ -156,4 +174,21 @@
     </div>
   {% endif %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tzInput = document.getElementById('tz_offset');
+    if (tzInput) {
+      tzInput.value = new Date().getTimezoneOffset();
+    }
+  });
+
+  function exportCSV() {
+    const form = document.getElementById('history-filter-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    window.location.href = "{{ url_for('export_csv') }}?" + params.toString();
+  }
+</script>
 {% endblock %}
+

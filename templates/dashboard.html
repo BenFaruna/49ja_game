@@ -3,10 +3,12 @@
 {% block title %}Dashboard | 49ja Analytics{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+<div class="page-header"
+  style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
   <div>
     <h1 class="page-title">Analytics Dashboard</h1>
-    <p class="page-subtitle">Real-time statistics for timeframe: <strong style="color: var(--accent-cyan);">{{ category_label }}</strong></p>
+    <p class="page-subtitle">Real-time statistics for timeframe: <strong style="color: var(--accent-cyan);">{{
+        category_label }}</strong></p>
   </div>
 </div>
 
@@ -16,11 +18,11 @@
     <div class="filter-group">
       <label for="time" class="filter-label">🕒 Analytics Time Filter:</label>
       <select name="time" id="time" onchange="this.form.submit()">
-        <option value="0" {% if selected_time == 0 %}selected{% endif %}>All Time</option>
-        <option value="0.5" {% if selected_time == 0.5 %}selected{% endif %}>Last 30 Minutes</option>
-        <option value="1.0" {% if selected_time == 1.0 %}selected{% endif %}>Last 1 Hour</option>
-        <option value="4.0" {% if selected_time == 4.0 %}selected{% endif %}>Last 4 Hours</option>
-        <option value="24.0" {% if selected_time == 24.0 %}selected{% endif %}>Last 24 Hours</option>
+        <option value="0" {% if selected_time==0 %}selected{% endif %}>All Time</option>
+        <option value="0.5" {% if selected_time==0.5 %}selected{% endif %}>Last 30 Minutes</option>
+        <option value="1.0" {% if selected_time==1.0 %}selected{% endif %}>Last 1 Hour</option>
+        <option value="4.0" {% if selected_time==4.0 %}selected{% endif %}>Last 4 Hours</option>
+        <option value="24.0" {% if selected_time==24.0 %}selected{% endif %}>Last 24 Hours</option>
       </select>
     </div>
   </form>
@@ -33,16 +35,21 @@
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
       <span class="live-indicator"><span class="pulse-dot"></span> LATEST DRAW</span>
       <span class="hero-meta" id="latestDrawId">#{{ latest.id if latest else 'N/A' }}</span>
-      <span class="hero-meta local-time" id="latestDate" data-utc="{{ latest.date.strftime('%Y-%m-%dT%H:%M:%SZ') if latest else '' }}">
+      <span class="hero-meta local-time" id="latestDate"
+        data-utc="{{ latest.date.strftime('%Y-%m-%dT%H:%M:%SZ') if latest else '' }}">
         {{ latest.date.strftime("%Y-%m-%d %H:%M:%S") if latest else '' }}
       </span>
     </div>
     <h2>Winning Balls & Summary</h2>
     <div style="display: flex; gap: 12px; margin-top: 8px;">
-      <span class="badge {% if latest and latest.hi_lo_mid == 'Hi' %}badge-hi{% elif latest and latest.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}" id="latestHlm">
-        Range: {{ latest.hi_lo_mid if latest else 'N/A' }} (Total: <span id="latestTotal">{{ latest.total if latest else 0 }}</span>)
+      <span
+        class="badge {% if latest and latest.hi_lo_mid == 'Hi' %}badge-hi{% elif latest and latest.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}"
+        id="latestHlm">
+        Range: {{ latest.hi_lo_mid if latest else 'N/A' }} (Total: <span id="latestTotal">{{ latest.total if latest else
+          0 }}</span>)
       </span>
-      <span class="badge badge-hi" id="latestColor" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
+      <span class="badge badge-hi" id="latestColor"
+        style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
         Dominant: {{ latest.colour if latest else 'N/A' }}
       </span>
     </div>
@@ -50,12 +57,12 @@
 
   <div class="balls-row" id="latestBalls">
     {% if latest %}
-      {% for b in [latest.first, latest.second, latest.third, latest.fourth, latest.fifth, latest.sixth] %}
-        {% set ball_clr = color(b)[1]|lower %}
-        <div class="ball ball-large ball-{{ ball_clr }}">{{ b }}</div>
-      {% endfor %}
+    {% for b in [latest.first, latest.second, latest.third, latest.fourth, latest.fifth, latest.sixth] %}
+    {% set ball_clr = color(b)[1]|lower %}
+    <div class="ball ball-large ball-{{ ball_clr }}">{{ b }}</div>
+    {% endfor %}
     {% else %}
-      <div style="color: var(--text-muted);">No draw data available yet</div>
+    <div style="color: var(--text-muted);">No draw data available yet</div>
     {% endif %}
   </div>
 </div>
@@ -114,9 +121,10 @@
 
 <!-- Color Distribution Visual Bar -->
 <div class="card" style="margin-bottom: 28px;">
-  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Dominant Color Distribution % ({{ category_label }})</h3>
+  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Dominant Color Distribution % ({{
+    category_label }})</h3>
   <p style="font-size: 0.85rem; color: var(--text-muted);">Proportion of winning dominant colors in timeframe</p>
-  
+
   <div class="progress-container">
     <div class="progress-bar-bg">
       <div class="progress-segment segment-red" style="width: {{ analytics.color_percentages.Red }}%;"></div>
@@ -127,27 +135,38 @@
   </div>
 
   <div class="legend-grid">
-    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Red: {{ analytics.color_percentages.Red }}%</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Blue: {{ analytics.color_percentages.Blue }}%</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Green: {{ analytics.color_percentages.Green }}%</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#eab308;"></div> Yellow: {{ analytics.color_percentages.Yellow }}%</div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#ef4444;"></div> Red: {{ analytics.color_percentages.Red }}%
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#3b82f6;"></div> Blue: {{ analytics.color_percentages.Blue }}%
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#10b981;"></div> Green: {{ analytics.color_percentages.Green }}%
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#eab308;"></div> Yellow: {{ analytics.color_percentages.Yellow }}%
+    </div>
   </div>
 </div>
 
 <!-- Ball Frequency Heatmap (1 - 49) -->
 <div class="card" style="margin-bottom: 28px;">
-  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Ball Frequency Heatmap (Numbers 1 – 49)</h3>
-  <p style="font-size: 0.85rem; color: var(--text-muted);">Total occurrences of each ball number for {{ category_label }}</p>
+  <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;">Ball Frequency Heatmap (Numbers 1 –
+    49)</h3>
+  <p style="font-size: 0.85rem; color: var(--text-muted);">Total occurrences of each ball number for {{ category_label
+    }}</p>
 
   <div class="heatmap-grid">
     {% for num in range(1, 50) %}
-      {% set clr_name = color(num)[1]|lower %}
-      <div class="heatmap-cell">
-        <div class="heatmap-num" style="color: {% if clr_name == 'red' %}#f87171{% elif clr_name == 'blue' %}#60a5fa{% elif clr_name == 'green' %}#34d399{% else %}#facc15{% endif %};">
-          {{ num }}
-        </div>
-        <div class="heatmap-count" id="heatmap-count-{{ num }}">{{ analytics.ball_freq[num] }}x</div>
+    {% set clr_name = color(num)[1]|lower %}
+    <div class="heatmap-cell">
+      <div class="heatmap-num"
+        style="color: {% if clr_name == 'red' %}#f87171{% elif clr_name == 'blue' %}#60a5fa{% elif clr_name == 'green' %}#34d399{% else %}#facc15{% endif %};">
+        {{ num }}
       </div>
+      <div class="heatmap-count" id="heatmap-count-{{ num }}">{{ analytics.ball_freq[num] }}x</div>
+    </div>
     {% endfor %}
   </div>
 </div>
@@ -176,31 +195,33 @@
       </thead>
       <tbody>
         {% for row in recent_draws %}
-          <tr>
-            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">#{{ row.id }}</td>
-            <td style="color: var(--text-muted);" class="local-time" data-utc="{{ row.date.strftime('%Y-%m-%dT%H:%M:%SZ') }}">
-              {{ row.date.strftime("%Y-%m-%d %H:%M:%S") }}
-            </td>
-            <td>
-              <div class="balls-row">
-                {% for b in [row.first, row.second, row.third, row.fourth, row.fifth, row.sixth] %}
-                  {% set b_clr = color(b)[1]|lower %}
-                  <div class="ball ball-{{ b_clr }}">{{ b }}</div>
-                {% endfor %}
-              </div>
-            </td>
-            <td>
-              <span class="pill pill-{{ row.colour|lower }}">
-                {{ row.colour }}
-              </span>
-            </td>
-            <td>
-              <span class="badge {% if row.hi_lo_mid == 'Hi' %}badge-hi{% elif row.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}">
-                {{ row.hi_lo_mid }}
-              </span>
-            </td>
-            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">{{ row.total }}</td>
-          </tr>
+        <tr>
+          <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">#{{ row.id }}</td>
+          <td style="color: var(--text-muted);" class="local-time"
+            data-utc="{{ row.date.strftime('%Y-%m-%dT%H:%M:%SZ') }}">
+            {{ row.date.strftime("%Y-%m-%d %H:%M:%S") }}
+          </td>
+          <td>
+            <div class="balls-row">
+              {% for b in [row.first, row.second, row.third, row.fourth, row.fifth, row.sixth] %}
+              {% set b_clr = color(b)[1]|lower %}
+              <div class="ball ball-{{ b_clr }}">{{ b }}</div>
+              {% endfor %}
+            </div>
+          </td>
+          <td>
+            <span class="pill pill-{{ row.colour|lower }}">
+              {{ row.colour }}
+            </span>
+          </td>
+          <td>
+            <span
+              class="badge {% if row.hi_lo_mid == 'Hi' %}badge-hi{% elif row.hi_lo_mid == 'Lo' %}badge-lo{% else %}badge-mid{% endif %}">
+              {{ row.hi_lo_mid }}
+            </span>
+          </td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">{{ row.total }}</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
