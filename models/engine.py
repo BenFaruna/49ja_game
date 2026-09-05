@@ -57,6 +57,35 @@ class DBStorage:
             self.__session.rollback()
             return {}
 
+    def filter_draws(self, hours=0.0, start_datetime=None, end_datetime=None, occurrence=0):
+        """Query game data filtered by time window, explicit datetime bounds, and color occurrence."""
+        new_dict = {}
+        try:
+            query = self.__session.query(GameData)
+            if start_datetime:
+                query = query.filter(GameData.date >= start_datetime)
+            if end_datetime:
+                query = query.filter(GameData.date <= end_datetime)
+            if not start_datetime and not end_datetime and hours > 0:
+                utc_cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=float(hours))
+                query = query.filter(GameData.date >= utc_cutoff)
+            if occurrence > 0:
+                query = query.filter(
+                    (GameData.r_count == occurrence)
+                    | (GameData.g_count == occurrence)
+                    | (GameData.b_count == occurrence)
+                )
+            objs = query.all()
+            for obj in objs:
+                key = obj.__class__.__name__ + "." + str(obj.id)
+                new_dict[key] = obj
+            return new_dict
+        except Exception as e:
+            logger.error(f"Database query error in filter_draws(): {e}")
+            self.__session.rollback()
+            return {}
+
+
     def new(self, obj):
         """add the object to the current database session"""
         try:
