@@ -1,0 +1,16 @@
+# Caddyfile for 49ja Analytics App
+
+# Listen on HTTP port 80 (or replace with your domain, e.g. example.com, for automatic HTTPS)
+:80 {
+    # Reverse proxy requests to the 'app' container running Gunicorn on port 5000
+    reverse_proxy app:5000
+
+    # Enable response compression for faster page load
+    encode gzip zstd
+
+    # Output HTTP access logs to stdout
+    log {
+        output stdout
+        format console
+    }
+}

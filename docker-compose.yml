@@ -5,7 +5,7 @@ services:
     restart: always
     ports:
       - "5000:5000"
-    shm_size: "1gb"  # Crucial for preventing Firefox tab crashes
+    shm_size: "1gb" # Crucial for preventing Firefox tab crashes
     volumes:
       - ./game_data.db:/app/game_data.db:z
       - ./app.log:/app/app.log:z
@@ -16,3 +16,19 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  caddy:
+    image: caddy:2.11.4
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./conf:/etc/caddy
+      - ./site:/static
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
