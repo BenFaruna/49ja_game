@@ -16,19 +16,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  caddy:
-    image: caddy:2.11.4
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./conf:/etc/caddy
-      - ./site:/static
-      - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
-  caddy_data:
-  caddy_config:
