@@ -1,61 +1,183 @@
-# 49ja Game Data
+# 🎯 49ja Analytics & Real-Time Scraper
 
-## Introduction
-Welcome to 49ja Game data! This application is designed to help players of the bet9ja 49ja game make more informed decisions by providing access to historical data.
+A web application and automated scraper designed for analyzing historical and real-time **Bet9ja 49ja** lottery draw data. It provides interactive visual analytics, ball frequency heatmaps, custom time/date filtering, and CSV dataset exporting.
 
-This application gathers data from the bet9ja 49ja game website through web scraping using selenium and presents the data in easy-to-read tables and charts. You can view data for time intervals, and compare data from different periods to see trends and patterns.
+---
 
-We hope that our application will be a useful tool for players looking to analyze and understand the bet9ja 49ja game data.
+## 🚀 Quick Navigation
 
-## Installation
-1. To use this application on your personal computer (PC), you must have python3 and postgreSQL installed.
-If you have not installed them, follow the link below setup python and postgreSQL for your pc.
-* [Python](https://www.digitalocean.com/community/tutorials/install-python-windows-10) - Windows
-* [PostgreSQl](https://phoenixnap.com/kb/install-postgresql-windows) - Windows
-* [PostgreSQL](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart) - Linux
+- [Features](#-features)
+- [Frontend Routes](#-frontend-routes)
+- [Backend API Endpoints](#-backend-api-endpoints)
+- [Tech Stack](#-tech-stack)
+- [Local Development Setup](#-local-development-setup)
+- [Docker & Production Deployment](#-docker--production-deployment)
+- [Project Structure](#-project-structure)
 
+---
 
-2. After installation create a new database using the steps [here](https://www.microfocus.com/documentation/idol/IDOL_12_0/MediaServer/Guides/html/English/Content/Getting_Started/Configure/_TRN_Set_up_PostgreSQL.htm). Take note of the database name and your password to postgresql
+## ✨ Features
 
-3. Copy and paste the command below into your terminal to clone the repository into your machine.
+- **Automated Real-Time Scraper**: Background Selenium worker running Firefox ESR to scrape draw numbers, color breakdown, total sums, and Hi/Lo/Mid ranges continuously.
+- **Interactive Analytics Dashboard**:
+  - Live 5-second polling updates without full page reload.
+  - KPI summary metrics (total draws, average sum, color distribution, Hi/Lo/Mid counts).
+  - Ball Frequency Heatmap for numbers 1 – 49.
+  - Dominant color percentage bar (Red, Blue, Green, Yellow).
+- **Draw History & Custom Range Filtering**:
+  - Date & Time range lower/upper bound filter with automatic timezone conversion.
+  - Color match filters (3, 4, 5 or 6 same color draws).
+  - Pagination controls (10, 25, 50, or 100 draws per page).
+- **CSV Data Export**: One-click export of filtered draw datasets to `.csv`.
 
-```
-$ git clone https://github.com/BenFaruna/49ja_game
-```
+---
 
-4. Navigate into the project directory from your terminal using the command.
-```
-$ cd 49ja_game
-```
+## 🌐 Frontend Routes
 
-5. (optional) You can create a virtual environment by following the steps outlined [here](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/). Activate the virtual environment.
+| Route | Description | Query Parameters |
+| :--- | :--- | :--- |
+| `/` | **Analytics Dashboard** — Displays real-time KPIs, latest draw banner, color distribution, and frequency heatmap. | `?time=0` (All Time), `0.5` (30m), `1.0` (1h), `4.0` (4h), `24.0` (24h) |
+| `/history` | **Draw History** — Paginated tabular view of scraped draws with date/time range and color match filters. | `?start_datetime=`, `?end_datetime=`, `?time=`, `?occurrence=`, `?page=`, `?per_page=` |
 
-6. Before the installation of the packages, open `requirements.txt` and change <chrome-version> to the version of your chrome browser. Install packages needed for the application to run using the command
-```
-49ja_game$ pip install -r requirements.txt
-```
+---
 
-7. Add your database url as an environmental variable.
+## 🔌 Backend API Endpoints
 
-On Windows using powershell
-```powershell
-ps 49ja_game> $env:DB_URL='postgresql://postgres:<database-password>@localhost/<database-name>' 
-```
+### 1. Live Stats API
 
-On Linux
+- **Endpoint**: `GET /api/stats`
+- **Description**: Returns JSON formatted analytics data used for dashboard real-time auto-refresh.
+- **Query Parameters**: `time` (float, e.g., `0`, `0.5`, `1.0`, `4.0`, `24.0`)
+- **Example Response**:
+
+  ```json
+  {
+    "status": "success",
+    "time_filter": 1.0,
+    "total_draws": 42,
+    "latest_draw": {
+      "id": 5781012,
+      "date": "2026-09-05T20:40:00Z",
+      "balls": [12, 5, 44, 29, 31, 8],
+      "colour": "Red",
+      "total": 129,
+      "hi_lo_mid": "Mid",
+      "counts": { "Red": 3, "Green": 1, "Blue": 2, "Yellow": 0 }
+    },
+    "color_counts": { "Red": 18, "Blue": 12, "Green": 8, "Yellow": 4 },
+    "color_percentages": { "Red": 42.9, "Blue": 28.6, "Green": 19.0, "Yellow": 9.5 },
+    "hi_lo_mid": { "Hi": 15, "Lo": 10, "Mid": 17 },
+    "avg_total": 142.5,
+    "ball_freq": { "1": 5, "2": 3, "...": "..." }
+  }
+  ```
+
+### 2. CSV Data Export
+
+- **Endpoint**: `GET /history/export`
+- **Description**: Generates and downloads a `.csv` file attachment containing all records matching the selected filter criteria.
+- **Query Parameters**:
+  - `start_datetime` (ISO string, e.g. `2026-09-01T00:00`)
+  - `end_datetime` (ISO string, e.g. `2026-09-05T23:59`)
+  - `time` (hours window)
+  - `occurrence` (color match count)
+  - `tz_offset` (client browser timezone offset in minutes)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend**: Python 3.11+, Flask, SQLAlchemy, Gunicorn
+- **Scraper**: Selenium WebDriver, Firefox ESR, GeckoDriver
+- **Database**: SQLite (default) / PostgreSQL (supported via `DB_URL` env variable)
+- **Frontend**: HTML5, Vanilla CSS, JavaScript (Fetch API)
+- **Deployment & Proxy**: Docker, Docker Compose, Caddy 2
+
+---
+
+## 💻 Local Development Setup
+
+### Prerequisites
+
+- Python 3.11+
+- Firefox browser & GeckoDriver (or run via Docker)
+
+### Step-by-Step Setup
+
+1. **Clone the Repository**:
+
+   ```bash
+   git clone https://github.com/BenFaruna/49ja_game.git
+   cd 49ja_game
+   ```
+
+2. **Create & Activate Virtual Environment**:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install Dependencies**:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Environment Configuration (Optional)**:
+   By default, the app uses local SQLite (`sqlite:///game_data.db`). To use a custom database (e.g., PostgreSQL):
+
+   ```bash
+   export DB_URL='postgresql://user:password@localhost:5432/game_data'
+   ```
+
+5. **Start Development Server**:
+
+   ```bash
+   python app.py
+   ```
+
+   The Flask server will launch at `http://localhost:5050` (or `http://127.0.0.1:5050`) and automatically start the background scraper thread.
+
+---
+
+## 🐳 Docker & Production Deployment
+
+For production, run the application containerized with **Gunicorn** and **Caddy** reverse proxy.
+
+### Start Containers with Docker Compose
+
 ```bash
-49ja_game$ DB_URL='postgresql://postgres:neodynamics@localhost/49ja_data_db'
+docker compose up -d --build
 ```
 
-After adding the database url as an environmental variable, you can start either the automation script for gathering data ([main.py](./main.py)) or the web application that shows the data in the application ([app.py](./app.py)) or both at the same time using two terminals. When using two terminals, step 7 must be done for both terminals.
+### How Production Architecture Works
 
-8. Start the application
-```sh
-49ja_game$ python main.py
-```
-```sh
-49ja_game$ python app.py
-```
-9. You can view the data by accessing your database directly or opening the link http://localhost:5000 on your browser.
+- **Gunicorn Master Hook**: Configured in `gunicorn.conf.py` using `on_starting(server)` to ensure only **one** background scraper instance runs across Gunicorn workers.
+- **Caddy Reverse Proxy**: Listens on ports `80` / `443`, proxies traffic to `app:5000`, and handles gzip/zstd compression.
 
-## Usage
+---
+
+## 📁 Project Structure
+
+```
+49ja_game/
+├── app.py                 # Flask application & routes (/, /history, /api/stats, /history/export)
+├── scraper.py             # Selenium background scraper worker
+├── driver_functions.py    # Headless Firefox driver initialization
+├── gunicorn.conf.py       # Gunicorn server config & master process lifecycle hook
+├── Caddyfile              # Caddy reverse proxy configuration
+├── Dockerfile             # Container definition (Python + Firefox ESR + GeckoDriver)
+├── docker-compose.yml     # Multi-container orchestration (App + Caddy)
+├── models/
+│   ├── base.py            # SQLAlchemy base & datetime model
+│   ├── engine.py          # DBStorage engine (filter_draws, time_diff, save)
+│   └── game_data.py       # GameData ORM schema
+├── helper_functions.py    # Analytics computation & color rules
+├── static/
+│   └── style.css
+└── templates/
+    ├── base.html          # Layout template with live script & local time formatting
+    ├── dashboard.html     # Analytics dashboard template
+    └── history.html       # Draw history table, filter bar, & CSV export
+```
