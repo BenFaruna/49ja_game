@@ -355,6 +355,10 @@ a {
     background-color: #eab308;
 }
 
+.segment-none {
+    background-color: #cfcdc4;
+}
+
 .legend-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -612,6 +616,11 @@ select:focus,
 .pill-yellow {
     background: rgba(234, 179, 8, 0.2);
     color: #facc15;
+}
+
+.pill-none {
+    background: rgba(189, 189, 189, 0.2);
+    color: #cfcdc4;
 }
 
 /* -------------------------------------------------------------------------

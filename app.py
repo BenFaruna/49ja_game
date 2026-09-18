@@ -1,14 +1,15 @@
 import csv
 import io
-from datetime import datetime, timedelta, timezone
 import math
+from datetime import datetime, timedelta, timezone
 from threading import Thread
-from flask import Flask, render_template, request, jsonify, Response
 
-from models import storage
-from helper_functions import decide_number_color, compute_analytics
-from scraper import scrape
+from flask import Flask, Response, jsonify, render_template, request
+
+from helper_functions import compute_analytics, decide_number_color
 from logger import get_logger
+from models import storage
+from scraper import scrape
 
 logger = get_logger("app")
 
@@ -33,7 +34,12 @@ def parse_datetime_param(dt_str, tz_offset=None):
     try:
         dt = datetime.fromisoformat(dt_str)
     except ValueError:
-        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        for fmt in (
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+        ):
             try:
                 dt = datetime.strptime(dt_str, fmt)
                 break
@@ -69,7 +75,11 @@ def get_filtered_history_data(request_args):
     end_str = request_args.get("end_datetime", "").strip()
 
     try:
-        tz_offset = float(request_args.get("tz_offset")) if request_args.get("tz_offset") else None
+        tz_offset = (
+            float(request_args.get("tz_offset"))
+            if request_args.get("tz_offset")
+            else None
+        )
     except (ValueError, TypeError):
         tz_offset = None
 
@@ -86,25 +96,33 @@ def get_filtered_history_data(request_args):
     temp_list = [*temp_data.values()][-1::-1] if temp_data else []
 
     if start_str and end_str:
-        category_label = f"From {start_str.replace('T', ' ')} to {end_str.replace('T', ' ')}"
+        category_label = (
+            f"From {start_str.replace('T', ' ')} to {end_str.replace('T', ' ')}"
+        )
     elif start_str:
         category_label = f"From {start_str.replace('T', ' ')}"
     elif end_str:
         category_label = f"Up to {end_str.replace('T', ' ')}"
     elif hours > 0:
-        category_label = f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
+        category_label = (
+            f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
+        )
     else:
         category_label = "All Time"
 
     if occurrence > 0:
         category_label += f" | {occurrence} Same Color"
 
-    return temp_list, category_label, {
-        "hours": hours,
-        "occurrence": occurrence,
-        "start_str": start_str,
-        "end_str": end_str,
-    }
+    return (
+        temp_list,
+        category_label,
+        {
+            "hours": hours,
+            "occurrence": occurrence,
+            "start_str": start_str,
+            "end_str": end_str,
+        },
+    )
 
 
 @app.route("/")
@@ -118,7 +136,9 @@ def home():
     try:
         if hours > 0:
             temp_data = storage.time_diff(hours)
-            category_label = f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
+            category_label = (
+                f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
+            )
         else:
             temp_data = storage.all()
             category_label = "All Time"
@@ -263,7 +283,9 @@ def export_csv():
                 ]
             )
 
-        csv_filename = f"49ja_draw_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        csv_filename = (
+            f"49ja_draw_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        )
         return Response(
             output.getvalue(),
             mimetype="text/csv",
@@ -272,7 +294,6 @@ def export_csv():
     except Exception as e:
         logger.error(f"Error generating CSV export: {e}")
         return "Failed to generate CSV export.", 500
-
 
 
 @app.route("/api/stats")

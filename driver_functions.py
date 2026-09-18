@@ -27,7 +27,9 @@ def extract_draw_id(text: str) -> int | None:
     return None
 
 
-def check_id_of_current_draw(driver, current_draw: int, timeout: int = 60) -> int | None:
+def check_id_of_current_draw(
+    driver, current_draw: int, timeout: int = 60
+) -> int | None:
     """
     Checks the ID of the current draw and waits until the draw ID advances.
     :param driver: webdriver instance
@@ -61,7 +63,11 @@ def check_id_of_current_draw(driver, current_draw: int, timeout: int = 60) -> in
         temp = extract_draw_id(elem.text)
         return temp
 
-    except (NoSuchElementException, StaleElementReferenceException, WebDriverException) as e:
+    except (
+        NoSuchElementException,
+        StaleElementReferenceException,
+        WebDriverException,
+    ) as e:
         logger.warning(f"WebDriver exception while checking draw ID: {e}")
         return None
 
@@ -99,8 +105,14 @@ def get_ball_values(driver, retries: int = 5, delay: float = 0.5) -> list[int] |
             if len(values) == 6:
                 return values
 
-        except (NoSuchElementException, StaleElementReferenceException, ValueError) as e:
-            logger.debug(f"Attempt {attempt + 1}/{retries} reading ball values failed: {e}")
+        except (
+            NoSuchElementException,
+            StaleElementReferenceException,
+            ValueError,
+        ) as e:
+            logger.debug(
+                f"Attempt {attempt + 1}/{retries} reading ball values failed: {e}"
+            )
 
         time.sleep(delay)
 

@@ -22,6 +22,7 @@
         <option value="0.5" {% if selected_time==0.5 %}selected{% endif %}>Last 30 Minutes</option>
         <option value="1.0" {% if selected_time==1.0 %}selected{% endif %}>Last 1 Hour</option>
         <option value="4.0" {% if selected_time==4.0 %}selected{% endif %}>Last 4 Hours</option>
+        <option value="6.0" {% if selected_time==6.0 %}selected{% endif %}>Last 6 Hours</option>
         <option value="24.0" {% if selected_time==24.0 %}selected{% endif %}>Last 24 Hours</option>
       </select>
     </div>
@@ -113,7 +114,7 @@
       <span class="pill pill-red">Red: {{ analytics.color_counts.Red }}</span>
       <span class="pill pill-blue">Blue: {{ analytics.color_counts.Blue }}</span>
       <span class="pill pill-green">Green: {{ analytics.color_counts.Green }}</span>
-      <span class="pill pill-yellow">Yellow: {{ analytics.color_counts.Yellow }}</span>
+      <span class="pill pill-None">None: {{ analytics.color_counts.None }}</span>
     </div>
     <div class="stat-subtext" style="margin-top: 12px;">Color round victories</div>
   </div>
@@ -130,7 +131,7 @@
       <div class="progress-segment segment-red" style="width: {{ analytics.color_percentages.Red }}%;"></div>
       <div class="progress-segment segment-blue" style="width: {{ analytics.color_percentages.Blue }}%;"></div>
       <div class="progress-segment segment-green" style="width: {{ analytics.color_percentages.Green }}%;"></div>
-      <div class="progress-segment segment-yellow" style="width: {{ analytics.color_percentages.Yellow }}%;"></div>
+      <div class="progress-segment segment-none" style="width: {{ analytics.color_percentages.None }}%;"></div>
     </div>
   </div>
 
@@ -145,7 +146,7 @@
       <div class="legend-dot" style="background:#10b981;"></div> Green: {{ analytics.color_percentages.Green }}%
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#eab308;"></div> Yellow: {{ analytics.color_percentages.Yellow }}%
+      <div class="legend-dot" style="background:#cfcdc4;"></div> None: {{ analytics.color_percentages.None }}%
     </div>
   </div>
 </div>
