@@ -1,7 +1,7 @@
 # Gunicorn Configuration File
 import threading
 from scraper import scrape
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger("gunicorn_master")
 

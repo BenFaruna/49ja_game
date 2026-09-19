@@ -7,10 +7,10 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.firefox import GeckoDriverManager
 
-from driver_functions import check_id_of_current_draw, get_ball_values
-from helper_functions import color_count, color_decision, total_category
-from logger import get_logger
 from models.game_data import GameData
+from utils.converter import color_count, color_decision, total_category
+from utils.driver import check_id_of_current_draw, get_ball_values
+from utils.logger import get_logger
 
 logger = get_logger("scraper")
 

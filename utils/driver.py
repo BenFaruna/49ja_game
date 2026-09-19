@@ -10,7 +10,7 @@ from selenium.common.exceptions import (
     WebDriverException,
 )
 
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger("driver_functions")
 

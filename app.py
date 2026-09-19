@@ -1,15 +1,17 @@
 import csv
 import io
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from threading import Thread
 
 from flask import Flask, Response, jsonify, render_template, request
 
-from helper_functions import compute_analytics, decide_number_color
-from logger import get_logger
 from models import storage
+from routes import get_filtered_history_data
 from scraper import scrape
+from utils.converter import decide_number_color
+from utils.helper import compute_analytics
+from utils.logger import get_logger
 
 logger = get_logger("app")
 
@@ -20,109 +22,6 @@ app = Flask(__name__)
 def close_db(error=None):
     """Closes storage session after requests."""
     storage.close()
-
-
-def parse_datetime_param(dt_str, tz_offset=None):
-    """
-    Parses datetime string from query parameter.
-    Converts to UTC naive datetime for database filtering.
-    """
-    if not dt_str or not dt_str.strip():
-        return None
-    dt_str = dt_str.strip()
-    dt = None
-    try:
-        dt = datetime.fromisoformat(dt_str)
-    except ValueError:
-        for fmt in (
-            "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%dT%H:%M",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%d %H:%M",
-        ):
-            try:
-                dt = datetime.strptime(dt_str, fmt)
-                break
-            except ValueError:
-                pass
-    if dt is None:
-        return None
-
-    if dt.tzinfo is not None:
-        return dt.astimezone(timezone.utc).replace(tzinfo=None)
-
-    if tz_offset is not None:
-        try:
-            return dt + timedelta(minutes=float(tz_offset))
-        except (ValueError, TypeError):
-            pass
-    return dt
-
-
-def get_filtered_history_data(request_args):
-    """Parses filter args and returns (filtered_list, category_label, selected_params)."""
-    try:
-        hours = float(request_args.get("time", 0))
-    except (ValueError, TypeError):
-        hours = 0.0
-
-    try:
-        occurrence = int(request_args.get("occurrence", 0))
-    except (ValueError, TypeError):
-        occurrence = 0
-
-    start_str = request_args.get("start_datetime", "").strip()
-    end_str = request_args.get("end_datetime", "").strip()
-
-    try:
-        tz_offset = (
-            float(request_args.get("tz_offset"))
-            if request_args.get("tz_offset")
-            else None
-        )
-    except (ValueError, TypeError):
-        tz_offset = None
-
-    start_dt = parse_datetime_param(start_str, tz_offset)
-    end_dt = parse_datetime_param(end_str, tz_offset)
-
-    temp_data = storage.filter_draws(
-        hours=hours,
-        start_datetime=start_dt,
-        end_datetime=end_dt,
-        occurrence=occurrence,
-    )
-
-    temp_list = [*temp_data.values()][-1::-1] if temp_data else []
-
-    if start_str and end_str:
-        category_label = (
-            f"From {start_str.replace('T', ' ')} to {end_str.replace('T', ' ')}"
-        )
-    elif start_str:
-        category_label = f"From {start_str.replace('T', ' ')}"
-    elif end_str:
-        category_label = f"Up to {end_str.replace('T', ' ')}"
-    elif hours > 0:
-        category_label = (
-            f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
-        )
-    else:
-        category_label = "All Time"
-
-    if occurrence > 0:
-        category_label += f" | {occurrence} Same Color"
-
-    return (
-        temp_list,
-        category_label,
-        {
-            "hours": hours,
-            "occurrence": occurrence,
-            "start_str": start_str,
-            "end_str": end_str,
-        },
-    )
 
 
 @app.route("/")

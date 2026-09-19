@@ -11,13 +11,14 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 import models
 from models.base import Base
 from models.game_data import GameData
-from logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger("db_storage")
 
 
 class DBStorage:
     """interacts with the database"""
+
     __engine = None
     __session = None
 
@@ -44,10 +45,10 @@ class DBStorage:
         """query on the current database session based on relative UTC time difference"""
         new_dict = {}
         try:
-            utc_cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=float(hours))
-            objs = self.__session.query(GameData).filter(
-                GameData.date >= utc_cutoff
+            utc_cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+                hours=float(hours)
             )
+            objs = self.__session.query(GameData).filter(GameData.date >= utc_cutoff)
             for obj in objs:
                 key = obj.__class__.__name__ + "." + str(obj.id)
                 new_dict[key] = obj
@@ -57,7 +58,9 @@ class DBStorage:
             self.__session.rollback()
             return {}
 
-    def filter_draws(self, hours=0.0, start_datetime=None, end_datetime=None, occurrence=0):
+    def filter_draws(
+        self, hours=0.0, start_datetime=None, end_datetime=None, occurrence=0
+    ):
         """Query game data filtered by time window, explicit datetime bounds, and color occurrence."""
         new_dict = {}
         try:
@@ -67,7 +70,9 @@ class DBStorage:
             if end_datetime:
                 query = query.filter(GameData.date <= end_datetime)
             if not start_datetime and not end_datetime and hours > 0:
-                utc_cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=float(hours))
+                utc_cutoff = datetime.now(timezone.utc).replace(
+                    tzinfo=None
+                ) - timedelta(hours=float(hours))
                 query = query.filter(GameData.date >= utc_cutoff)
             if occurrence > 0:
                 query = query.filter(
@@ -84,7 +89,6 @@ class DBStorage:
             logger.error(f"Database query error in filter_draws(): {e}")
             self.__session.rollback()
             return {}
-
 
     def new(self, obj):
         """add the object to the current database session"""
