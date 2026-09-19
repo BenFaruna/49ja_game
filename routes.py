@@ -1,7 +1,7 @@
 import csv
 import io
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
 
 from flask import Blueprint, Response, jsonify, render_template, request
@@ -12,6 +12,7 @@ from utils.helper import compute_analytics, parse_datetime_param
 from utils.logger import get_logger
 
 router = Blueprint("router", __name__)
+logger = get_logger(log_file="server.log")
 
 
 @router.route("/")
@@ -126,6 +127,9 @@ def export_csv():
     try:
         filtered_list, _, _ = get_filtered_history_data(request.args)
 
+        tz_offset = request.args.get("tz_offset", 0)
+        tz_delta = timedelta(minutes=-float(tz_offset))
+
         output = io.StringIO()
         writer = csv.writer(output)
 
@@ -155,7 +159,11 @@ def export_csv():
             writer.writerow(
                 [
                     item.id,
-                    item.date.strftime("%Y-%m-%d %H:%M:%S") if item.date else "",
+                    (
+                        (item.date + tz_delta).strftime("%Y-%m-%d %H:%M:%S")
+                        if item.date
+                        else ""
+                    ),
                     item.first,
                     item.second,
                     item.third,
