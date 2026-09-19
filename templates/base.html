@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,7 @@
         }
         const d = new Date(isoStr);
         if (isNaN(d.getTime())) return isoStr;
-        
+
         const pad = (n) => String(n).padStart(2, '0');
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       } catch (e) {
@@ -34,18 +35,19 @@
     });
   </script>
 </head>
+
 <body>
   <!-- Navigation Header -->
   <header class="navbar">
-    <a href="{{ url_for('home') }}" class="nav-brand">
+    <a href="{{ url_for('router.home') }}" class="nav-brand">
       🎯 49ja <span>Analytics</span>
     </a>
 
     <nav class="nav-links">
-      <a href="{{ url_for('home') }}" class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}">
+      <a href="{{ url_for('router.home') }}" class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}">
         📊 Dashboard
       </a>
-      <a href="{{ url_for('history') }}" class="nav-link {% if active_tab == 'history' %}active{% endif %}">
+      <a href="{{ url_for('router.history') }}" class="nav-link {% if active_tab == 'history' %}active{% endif %}">
         📜 Draw History
       </a>
     </nav>
@@ -62,4 +64,5 @@
     {% endblock %}
   </main>
 </body>
+
 </html>

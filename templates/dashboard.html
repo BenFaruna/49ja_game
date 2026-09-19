@@ -14,7 +14,7 @@
 
 <!-- Dashboard Time Filter Bar -->
 <div class="card filter-card" style="margin-bottom: 24px;">
-  <form action="{{ url_for('home') }}" method="GET" class="filter-form">
+  <form action="{{ url_for('router.home') }}" method="GET" class="filter-form">
     <div class="filter-group">
       <label for="time" class="filter-label">🕒 Analytics Time Filter:</label>
       <select name="time" id="time" onchange="this.form.submit()">
@@ -179,7 +179,7 @@
       <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff;">Recent Draws Preview</h3>
       <p style="font-size: 0.85rem; color: var(--text-muted);">Latest 10 recorded game outcomes</p>
     </div>
-    <a href="{{ url_for('history') }}" class="btn-primary">View Full History →</a>
+    <a href="{{ url_for('router.history') }}" class="btn-primary">View Full History →</a>
   </div>
 
   <div class="table-wrapper">

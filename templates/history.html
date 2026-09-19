@@ -19,7 +19,7 @@
 
 <!-- Filter Controls Bar -->
 <div class="card filter-card">
-  <form action="{{ url_for('history') }}" method="GET" class="filter-form" id="history-filter-form">
+  <form action="{{ url_for('router.history') }}" method="GET" class="filter-form" id="history-filter-form">
     <input type="hidden" name="tz_offset" id="tz_offset" value="">
 
     <div class="filter-group">
@@ -71,7 +71,7 @@
 
     <div class="filter-actions" style="display: flex; gap: 10px; align-items: center;">
       <button type="submit" class="btn-primary">Apply Filters</button>
-      <a href="{{ url_for('history') }}" class="btn-reset">Reset</a>
+      <a href="{{ url_for('router.history') }}" class="btn-reset">Reset</a>
     </div>
   </form>
 </div>
@@ -158,7 +158,7 @@
       <!-- Previous Button -->
       <li>
         {% if has_prev %}
-        <a href="{{ url_for('history', page=page-1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}"
+        <a href="{{ url_for('router.history', page=page-1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}"
           class="page-link">
           ← Previous
         </a>
@@ -175,7 +175,7 @@
       <!-- Next Button -->
       <li>
         {% if has_next %}
-        <a href="{{ url_for('history', page=page+1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}"
+        <a href="{{ url_for('router.history', page=page+1, per_page=per_page, time=selected_time, occurrence=selected_occurrence, start_datetime=selected_start, end_datetime=selected_end) }}"
           class="page-link">
           Next →
         </a>
@@ -200,7 +200,7 @@
     const form = document.getElementById('history-filter-form');
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
-    window.location.href = "{{ url_for('export_csv') }}?" + params.toString();
+    window.location.href = "{{ url_for('router.export_csv') }}?" + params.toString();
   }
 </script>
 {% endblock %}
