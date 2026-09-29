@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}Switch Trigger Analytics | 49ja Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Switch Trigger Analytics</h1>
+  <p class="page-subtitle">Monitor 8 independent switch-trigger trackers in real-time</p>
+</div>
+
+<!-- Alert Status Banner -->
+<div class="alert-banner alert-{{ danger_level }}" id="alertBanner">
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <div class="alert-banner-icon" id="bannerIcon">
+      {% if danger_level == 'critical' %}🚨{% elif danger_level == 'warning' %}⚠️{% else %}✅{% endif %}
+    </div>
+    <div class="alert-banner-text">
+      <h3 id="bannerTitle">
+        {% if danger_level == 'critical' %}
+          DANGER — 8 Consecutive Losses Reached!
+        {% elif danger_level == 'warning' %}
+          Warning — Approaching Loss Threshold
+        {% else %}
+          All Systems Nominal
+        {% endif %}
+      </h3>
+      <p id="bannerSubtext">
+        {% if danger_level == 'critical' %}
+          One or more trackers have hit the maximum loss streak
+        {% elif danger_level == 'warning' %}
+          Some trackers are in the danger zone (6+ consecutive losses)
+        {% else %}
+          No trackers are near the 8-loss threshold
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="alert-banner-stat">
+    <div class="stat-num {{ danger_level }}" id="bannerMaxLosses">{{ max_losses }}</div>
+    <div class="stat-label">Max Losses</div>
+  </div>
+</div>
+
+<!-- 8 Tracker Cards Grid -->
+<div class="tracker-grid" id="trackerGrid">
+  {% for t in trackers %}
+  <div class="tracker-card {% if t.overall_losses >= 6 %}danger-zone{% endif %}"
+       id="tracker-card-{{ t.trigger_id }}"
+       data-trigger-id="{{ t.trigger_id }}">
+
+    <div class="tracker-card-header">
+      <div class="tracker-title">
+        🔀 <span class="trigger-num">T-{{ t.trigger_id }}</span> Switch
+      </div>
+      <div class="direction-badge dir-{{ t.assumed_direction|lower }}"
+           id="dir-badge-{{ t.trigger_id }}">
+        {% if t.assumed_direction == 'H' %}▲ HI{% else %}▼ LO{% endif %}
+      </div>
+    </div>
+
+    <!-- Loss Progress Bar -->
+    <div class="loss-progress-container">
+      <div class="loss-progress-label">
+        <span>Consecutive Losses</span>
+        <span class="loss-count {% if t.overall_losses <= 3 %}level-safe{% elif t.overall_losses <= 5 %}level-caution{% else %}level-danger{% endif %}"
+              id="loss-count-{{ t.trigger_id }}">
+          {{ t.overall_losses }} / 8
+        </span>
+      </div>
+      <div class="loss-progress-bar" id="loss-bar-{{ t.trigger_id }}">
+        {% for seg in range(1, 9) %}
+        <div class="loss-segment {% if seg <= t.overall_losses %}filled-{{ seg }}{% endif %}"></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Meta Info -->
+    <div class="tracker-meta">
+      <div class="tracker-meta-item">
+        Flip at: <strong id="flip-at-{{ t.trigger_id }}">{{ t.trigger_losses }} / {{ t.trigger_id }}</strong>
+      </div>
+      <div class="tracker-meta-item">
+        Draw: <strong id="last-game-{{ t.trigger_id }}">#{{ t.last_game_id if t.last_game_id else '—' }}</strong>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Alert History Section -->
+<div class="card">
+  <div class="section-header">
+    <div>
+      <h3>🚨 Alert History</h3>
+      <p>Log of all 8-consecutive-loss events across all trackers</p>
+    </div>
+    <div class="alert-count-badge" id="alertCountBadge">
+      {{ total_alerts }} total
+    </div>
+  </div>
+
+  {% if alerts %}
+  <div class="table-wrapper">
+    <table class="data-table" id="alertsTable">
+      <thead>
+        <tr>
+          <th>Draw ID</th>
+          <th>Trigger</th>
+          <th>Direction</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alert in alerts %}
+        <tr>
+          <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">
+            #{{ alert.game_id }}
+          </td>
+          <td>
+            <span class="trigger-pill">{{ alert.trigger_id }}-Switch</span>
+          </td>
+          <td>
+            <span class="direction-badge dir-{{ alert.direction_at_alert|lower }}">
+              {% if alert.direction_at_alert == 'H' %}▲ HI{% else %}▼ LO{% endif %}
+            </span>
+          </td>
+          <td style="color: var(--text-muted);" class="local-time"
+              data-utc="{{ alert.created_at }}">
+            {{ alert.created_at }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <p>No alerts have been triggered yet. Trackers are monitoring live draws.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Live Auto-Refresh Script -->
+<script>
+  function getSegmentClass(segIndex) {
+    return 'filled-' + segIndex;
+  }
+
+  function getLossLevel(losses) {
+    if (losses <= 3) return 'level-safe';
+    if (losses <= 5) return 'level-caution';
+    return 'level-danger';
+  }
+
+  function getDangerLevel(maxLosses) {
+    if (maxLosses >= 8) return 'critical';
+    if (maxLosses >= 6) return 'warning';
+    return 'safe';
+  }
+
+  function updateBanner(maxLosses) {
+    const banner = document.getElementById('alertBanner');
+    const icon = document.getElementById('bannerIcon');
+    const title = document.getElementById('bannerTitle');
+    const subtext = document.getElementById('bannerSubtext');
+    const stat = document.getElementById('bannerMaxLosses');
+
+    const level = getDangerLevel(maxLosses);
+    banner.className = 'alert-banner alert-' + level;
+    stat.className = 'stat-num ' + level;
+    stat.textContent = maxLosses;
+
+    if (level === 'critical') {
+      icon.textContent = '🚨';
+      title.textContent = 'DANGER — 8 Consecutive Losses Reached!';
+      subtext.textContent = 'One or more trackers have hit the maximum loss streak';
+    } else if (level === 'warning') {
+      icon.textContent = '⚠️';
+      title.textContent = 'Warning — Approaching Loss Threshold';
+      subtext.textContent = 'Some trackers are in the danger zone (6+ consecutive losses)';
+    } else {
+      icon.textContent = '✅';
+      title.textContent = 'All Systems Nominal';
+      subtext.textContent = 'No trackers are near the 8-loss threshold';
+    }
+  }
+
+  function updateTrackerCard(t) {
+    const card = document.getElementById('tracker-card-' + t.trigger_id);
+    if (!card) return;
+
+    // Danger zone class
+    if (t.overall_losses >= 6) {
+      card.classList.add('danger-zone');
+    } else {
+      card.classList.remove('danger-zone');
+    }
+
+    // Direction badge
+    const dirBadge = document.getElementById('dir-badge-' + t.trigger_id);
+    if (dirBadge) {
+      dirBadge.className = 'direction-badge dir-' + t.assumed_direction.toLowerCase();
+      dirBadge.textContent = t.assumed_direction === 'H' ? '▲ HI' : '▼ LO';
+    }
+
+    // Loss count text
+    const lossCount = document.getElementById('loss-count-' + t.trigger_id);
+    if (lossCount) {
+      lossCount.textContent = t.overall_losses + ' / 8';
+      lossCount.className = 'loss-count ' + getLossLevel(t.overall_losses);
+    }
+
+    // Progress bar segments
+    const bar = document.getElementById('loss-bar-' + t.trigger_id);
+    if (bar) {
+      const segments = bar.querySelectorAll('.loss-segment');
+      segments.forEach((seg, idx) => {
+        const segNum = idx + 1;
+        // Remove all filled classes
+        seg.className = 'loss-segment';
+        if (segNum <= t.overall_losses) {
+          seg.classList.add(getSegmentClass(segNum));
+        }
+      });
+    }
+
+    // Flip at
+    const flipAt = document.getElementById('flip-at-' + t.trigger_id);
+    if (flipAt) {
+      flipAt.textContent = t.trigger_losses + ' / ' + t.trigger_id;
+    }
+
+    // Last game
+    const lastGame = document.getElementById('last-game-' + t.trigger_id);
+    if (lastGame) {
+      lastGame.textContent = t.last_game_id ? '#' + t.last_game_id : '—';
+    }
+  }
+
+  function pollSwitchState() {
+    fetch('/api/switch-tracker/state')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          updateBanner(data.max_losses);
+          data.trackers.forEach(t => updateTrackerCard(t));
+        }
+      })
+      .catch(err => console.log('Switch poll error:', err));
+  }
+
+  // Poll every 5 seconds
+  setInterval(pollSwitchState, 5000);
+</script>
+{% endblock %}

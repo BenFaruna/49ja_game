@@ -116,6 +116,15 @@ def run_scraper_session():
             try:
                 game_data = GameData(**data)
                 game_data.save()
+
+                # Feed the new draw into the switch trigger monitor
+                try:
+                    from utils.switch_service import process_new_draw
+                    process_new_draw(game_data)
+                except Exception as switch_err:
+                    logger.error(
+                        f"Switch trigger processing failed for #{data['id']}: {switch_err}"
+                    )
             except Exception as e:
                 logger.error(f"Failed to save GameData #{data['id']} to database: {e}")
 

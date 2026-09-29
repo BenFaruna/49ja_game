@@ -252,6 +252,88 @@ def api_stats():
         logger.error(f"Error in api_stats: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@router.route("/switch-analytics", strict_slashes=False)
+def switch_analytics():
+    """Switch Trigger Analytics Page"""
+    from utils.switch_service import get_alerts, get_tracker_states
+
+    trackers = get_tracker_states()
+    total_alerts, recent_alerts = get_alerts(limit=20, offset=0)
+
+    # Determine danger level for the hero banner
+    max_losses = max((t["overall_losses"] for t in trackers), default=0)
+    if max_losses >= 8:
+        danger_level = "critical"
+    elif max_losses >= 6:
+        danger_level = "warning"
+    else:
+        danger_level = "safe"
+
+    return render_template(
+        "switch_analytics.html",
+        trackers=trackers,
+        alerts=recent_alerts,
+        total_alerts=total_alerts,
+        danger_level=danger_level,
+        max_losses=max_losses,
+        active_tab="switch",
+    )
+
+
+@router.route("/api/switch-tracker/state")
+def api_switch_tracker_state():
+    """JSON endpoint for live switch tracker states."""
+    try:
+        from utils.switch_service import get_tracker_states
+
+        trackers = get_tracker_states()
+        max_losses = max((t["overall_losses"] for t in trackers), default=0)
+
+        return jsonify(
+            {
+                "status": "success",
+                "max_losses": max_losses,
+                "trackers": trackers,
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in api_switch_tracker_state: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@router.route("/api/switch-tracker/alerts")
+def api_switch_tracker_alerts():
+    """JSON endpoint for switch trigger alert history."""
+    try:
+        from utils.switch_service import get_alerts
+
+        try:
+            limit = int(request.args.get("limit", 50))
+            limit = max(1, min(limit, 200))
+        except (ValueError, TypeError):
+            limit = 50
+
+        try:
+            offset = int(request.args.get("offset", 0))
+            offset = max(0, offset)
+        except (ValueError, TypeError):
+            offset = 0
+
+        total, alerts = get_alerts(limit=limit, offset=offset)
+
+        return jsonify(
+            {
+                "status": "success",
+                "total_alerts": total,
+                "limit": limit,
+                "offset": offset,
+                "alerts": alerts,
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in api_switch_tracker_alerts: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 def get_filtered_history_data(request_args):
     """Parses filter args and returns (filtered_list, category_label, selected_params)."""

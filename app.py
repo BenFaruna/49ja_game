@@ -18,6 +18,10 @@ logger = get_logger("app")
 app = Flask(__name__)
 app.register_blueprint(router)
 
+# Initialize the switch trigger monitor from persisted state
+from utils.switch_service import initialize_from_db
+initialize_from_db()
+
 
 @app.teardown_appcontext
 def close_db(error=None):
