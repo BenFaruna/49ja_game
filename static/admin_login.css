@@ -1,0 +1,254 @@
+/* ── Reset & base ─────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-primary: hsl(222, 28%, 8%);
+    --bg-card: hsl(222, 24%, 12%);
+    --bg-input: hsl(222, 22%, 16%);
+    --border: hsl(222, 20%, 22%);
+    --accent: hsl(261, 83%, 62%);
+    --accent-hover: hsl(261, 83%, 70%);
+    --accent-glow: hsl(261, 83%, 62%, 0.35);
+    --text-primary: hsl(220, 15%, 92%);
+    --text-muted: hsl(220, 10%, 55%);
+    --danger: hsl(0, 70%, 58%);
+    --success: hsl(145, 60%, 45%);
+    --warning: hsl(38, 90%, 55%);
+    --info: hsl(200, 80%, 55%);
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    /* Subtle radial ambient glow */
+    background-image:
+        radial-gradient(ellipse 60% 50% at 50% 0%, hsl(261, 83%, 15%) 0%, transparent 70%);
+}
+
+/* ── Card ──────────────────────────────────────────────────────────── */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    box-shadow:
+        0 0 0 1px hsl(261, 83%, 25%, 0.2),
+        0 24px 64px hsl(0, 0%, 0%, 0.4);
+    animation: fadeUp .4s ease both;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Brand ─────────────────────────────────────────────────────────── */
+.brand {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), hsl(290, 80%, 55%));
+    font-size: 1.6rem;
+    margin-bottom: .85rem;
+    box-shadow: 0 0 24px var(--accent-glow);
+}
+
+.brand h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    color: var(--text-primary);
+}
+
+.brand p {
+    font-size: .825rem;
+    color: var(--text-muted);
+    margin-top: .25rem;
+}
+
+/* ── Alerts ────────────────────────────────────────────────────────── */
+.alerts {
+    margin-bottom: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.alert {
+    padding: .65rem 1rem;
+    border-radius: 8px;
+    font-size: .825rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.alert-danger {
+    background: hsl(0, 60%, 15%);
+    border: 1px solid hsl(0, 60%, 30%);
+    color: hsl(0, 80%, 80%);
+}
+
+.alert-success {
+    background: hsl(145, 50%, 12%);
+    border: 1px solid hsl(145, 50%, 25%);
+    color: hsl(145, 60%, 70%);
+}
+
+.alert-warning {
+    background: hsl(38, 70%, 12%);
+    border: 1px solid hsl(38, 70%, 28%);
+    color: hsl(38, 90%, 75%);
+}
+
+.alert-info {
+    background: hsl(200, 60%, 12%);
+    border: 1px solid hsl(200, 60%, 28%);
+    color: hsl(200, 80%, 75%);
+}
+
+/* ── Form ──────────────────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 1.15rem;
+}
+
+label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: .45rem;
+}
+
+.input-wrap {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: .9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    pointer-events: none;
+    opacity: .5;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: .95rem;
+    padding: .75rem .9rem .75rem 2.5rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input::placeholder {
+    color: var(--text-muted);
+    opacity: .6;
+}
+
+.password-toggle {
+    position: absolute;
+    right: .8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: .95rem;
+    padding: .2rem;
+    transition: color .2s;
+}
+
+.password-toggle:hover {
+    color: var(--text-primary);
+}
+
+/* ── Submit button ─────────────────────────────────────────────────── */
+.btn-login {
+    width: 100%;
+    padding: .8rem;
+    border: none;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), hsl(290, 80%, 55%));
+    color: #fff;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .2px;
+    margin-top: .5rem;
+    transition: opacity .2s, box-shadow .2s, transform .1s;
+    box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn-login:hover {
+    opacity: .9;
+    box-shadow: 0 6px 28px var(--accent-glow);
+}
+
+.btn-login:active {
+    transform: scale(.98);
+}
+
+/* ── Footer hint ───────────────────────────────────────────────────── */
+.card-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--text-muted);
+}
+
+.card-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.card-footer a:hover {
+    text-decoration: underline;
+}

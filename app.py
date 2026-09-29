@@ -1,13 +1,15 @@
 import csv
 import io
 import math
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 from threading import Thread
 
 from flask import Flask, Response, jsonify, render_template, request
 
 from models import storage
 from routes import router
+from routes_admin import admin_bp
 from scraper import scrape
 from utils.converter import decide_number_color
 from utils.helper import compute_analytics
@@ -16,10 +18,24 @@ from utils.logger import get_logger
 logger = get_logger("app")
 
 app = Flask(__name__)
+
+# Secret key — required for Flask sessions. Set SECRET_KEY in your .env / environment.
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    logger.warning(
+        "SECRET_KEY environment variable is not set! "
+        "Using an insecure default — set it before deploying."
+    )
+    secret_key = "dev-insecure-secret-change-me"
+app.secret_key = secret_key
+app.permanent_session_lifetime = timedelta(hours=8)
+
 app.register_blueprint(router)
+app.register_blueprint(admin_bp)
 
 # Initialize the switch trigger monitor from persisted state
 from utils.switch_service import initialize_from_db
+
 initialize_from_db()
 
 

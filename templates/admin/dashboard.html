@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel · 49ja Analytics</title>
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+    <aside class="sidebar" aria-label="Admin navigation">
+      <div class="sidebar-brand">
+        <span class="icon">🛡️</span>
+        <div>
+          <h2>49ja Admin</h2>
+          <span>Control Panel</span>
+        </div>
+      </div>
+
+      <p class="nav-section-label">Navigation</p>
+      <a href="{{ url_for('admin.dashboard') }}" class="nav-item active">🏠 Dashboard</a>
+      <a href="{{ url_for('router.home') }}" class="nav-item">📊 Live Dashboard</a>
+      <a href="{{ url_for('router.history') }}" class="nav-item">📜 Draw History</a>
+      <a href="{{ url_for('router.switch_analytics') }}" class="nav-item">🔀 Switch Triggers</a>
+
+      <div class="sidebar-footer">
+        <a href="{{ url_for('admin.logout') }}" class="logout-btn">🚪 Sign Out</a>
+      </div>
+    </aside>
+
+    <!-- ── Main content ─────────────────────────────────────────────────── -->
+    <main class="main">
+      <!-- Header -->
+      <div class="page-header">
+        <h1>Admin Dashboard</h1>
+        {% if is_super %}
+        <span class="badge badge-super">⚡ Super Admin</span>
+        {% else %}
+        <span class="badge badge-admin">✅ Admin</span>
+        {% endif %}
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="alerts" role="alert" aria-live="polite">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          {% if category == 'danger' %}⛔{% elif category == 'success' %}✅{% elif category == 'warning' %}⚠️{% else
+          %}ℹ️{% endif %}
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <!-- Profile card -->
+      {% if current_admin %}
+      <div class="profile-section">
+        <div class="avatar" aria-hidden="true">👤</div>
+        <div class="profile-info">
+          <h2>{{ current_admin.username }}</h2>
+          <p>{{ current_admin.email }}</p>
+          <p style="margin-top:.3rem;">
+            {% if current_admin.is_super_admin %}
+            <span class="badge badge-super">⚡ Super Admin</span>
+            {% else %}
+            <span class="badge badge-admin">✅ Admin</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Stat cards (stub — to be wired up later) -->
+      <div class="cards-row">
+        <div class="stat-card">
+          <p class="label">Total Admins</p>
+          <p class="value">{{ all_admins | length if is_super else '—' }}</p>
+          <p class="sub">Registered accounts</p>
+        </div>
+        <div class="stat-card">
+          <p class="label">Your Role</p>
+          <p class="value" style="font-size:1.2rem; padding-top:.4rem;">
+            {{ '⚡ Super' if is_super else '✅ Admin' }}
+          </p>
+          <p class="sub">Access level</p>
+        </div>
+        <div class="stat-card">
+          <p class="label">Notification Emails</p>
+          <p class="value">—</p>
+          <p class="sub">Coming soon</p>
+        </div>
+      </div>
+
+      <!-- Email management placeholder -->
+      <div class="coming-soon">
+        <div class="cs-icon">📧</div>
+        <p><strong>Notification Email Management</strong></p>
+        <p style="margin-top:.4rem;">Add and manage email recipients for game alerts. Coming in the next sprint.</p>
+      </div>
+
+      <!-- Admin list (super only) -->
+      {% if is_super and all_admins %}
+      <p class="section-title">👥 All Admin Accounts</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for adm in all_admins %}
+            <tr>
+              <td style="color:var(--text-muted);">{{ adm.id }}</td>
+              <td><strong>{{ adm.username }}</strong></td>
+              <td style="color:var(--text-muted);">{{ adm.email }}</td>
+              <td>
+                {% if adm.is_super_admin %}
+                <span class="badge badge-super">⚡ Super</span>
+                {% else %}
+                <span class="badge badge-admin">Admin</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-dot {{ 'dot-active' if adm.is_active else 'dot-inactive' }}"></span>
+                {{ 'Active' if adm.is_active else 'Inactive' }}
+              </td>
+              <td style="color:var(--text-muted);">
+                {% if adm.date %}
+                {{ adm.date.strftime('%Y-%m-%d') }}
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+
+</body>
+
+</html>

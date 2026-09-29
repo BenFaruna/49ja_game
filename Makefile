@@ -19,6 +19,12 @@ run:
 	@echo "starting server..."
 	gunicorn app:app --reload
 
+## create-admin: create a new admin account (interactive CLI — use --super for super-admin)
+.PHONY: create-admin
+create-admin:
+	@echo "Launching admin creation utility..."
+	python scripts/create_admin.py $(ARGS)
+
 # ==================================================================================== #
 # DEPLOYMENT
 # ==================================================================================== #
