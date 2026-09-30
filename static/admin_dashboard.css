@@ -374,21 +374,139 @@
         background: var(--text-muted);
     }
 
-    /* ── Placeholder section ───────────────────────────────────────────── */
-    .coming-soon {
+    /* ── Email Management ──────────────────────────────────────────────── */
+    .email-management-section {
+        margin-top: 2rem;
+    }
+
+    .email-add-form {
         background: var(--bg-card);
-        border: 1px dashed var(--border);
+        border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 2.5rem;
-        text-align: center;
-        color: var(--text-muted);
-        font-size: .9rem;
+        padding: 1.2rem 1.4rem;
         margin-bottom: 1.5rem;
     }
 
-    .coming-soon .cs-icon {
-        font-size: 2rem;
-        margin-bottom: .5rem;
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 200px;
+    }
+
+    .form-group-sm {
+        flex: 0 0 90px;
+    }
+
+    .form-group label {
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: .35rem;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .form-group input {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: .55rem .75rem;
+        border-radius: 8px;
+        font-size: .875rem;
+        font-family: inherit;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .form-group input::placeholder {
+        color: var(--text-muted);
+        opacity: .6;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .btn-add {
+        background: linear-gradient(135deg, var(--accent), hsl(280, 80%, 55%));
+        color: #fff;
+        border: none;
+        padding: .55rem 1.3rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: .875rem;
+        font-family: inherit;
+        transition: transform .15s, box-shadow .2s;
+        white-space: nowrap;
+        height: fit-content;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 18px var(--accent-glow);
+    }
+
+    .btn-add:active {
+        transform: translateY(0);
+    }
+
+    .btn-sm {
+        padding: .35rem .6rem;
+        font-size: .8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-primary);
+        transition: background .2s, transform .15s;
+    }
+
+    .btn-deactivate:hover {
+        background: var(--amber-soft);
+        border-color: hsl(38, 90%, 35%);
+    }
+
+    .btn-activate:hover {
+        background: var(--green-soft);
+        border-color: hsl(145, 60%, 30%);
+    }
+
+    .btn-delete:hover {
+        background: var(--danger-soft);
+        border-color: hsl(0, 70%, 35%);
+        transform: scale(1.05);
+    }
+
+    .action-btns {
+        display: flex;
+        gap: .4rem;
+    }
+
+    .badge-threshold {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid hsl(261, 83%, 35%);
+        padding: .2rem .6rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2.5rem 0;
+        font-style: italic;
+        font-size: .9rem;
     }
 
     /* ── Responsive ────────────────────────────────────────────────────── */
@@ -404,5 +522,13 @@
         .profile-section {
             flex-direction: column;
             text-align: center;
+        }
+
+        .form-row {
+            flex-direction: column;
+        }
+
+        .form-group-sm {
+            flex: 1 1 auto;
         }
     }

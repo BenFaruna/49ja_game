@@ -20,7 +20,7 @@ import models
 from models.switch_tracker import SwitchAlert, SwitchTrackerState
 from utils.logger import get_logger
 
-logger = get_logger("switch_service")
+logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Outcome mapping: GameData.hi_lo_mid  →  H / L / M
@@ -170,11 +170,24 @@ def _record_alerts(game_id: int, trigger_ids: List[int]) -> None:
         alert.save()
 
     triggers_str = ", ".join(f"{t}-Switch" for t in trigger_ids)
+
+    # Compute the max overall_losses across triggered trackers for the email
+    max_losses = max(monitor.trackers[tid].overall_losses for tid in trigger_ids)
+
     logger.warning(
-        "🚨 DANGER ALERT: 8 CONSECUTIVE LOSSES — Draw #%s — Triggers: %s",
+        "🚨 DANGER ALERT: %d CONSECUTIVE LOSSES — Draw #%s — Triggers: %s",
+        max_losses,
         game_id,
         triggers_str,
     )
+
+    # --- Send email notifications (non-blocking, never crashes scraper) ---
+    try:
+        from utils.email_service import send_alert_emails
+
+        send_alert_emails(game_id, trigger_ids, max_losses)
+    except Exception as email_err:
+        logger.error("Email notification failed for draw #%s: %s", game_id, email_err)
 
 
 # ---------------------------------------------------------------------------

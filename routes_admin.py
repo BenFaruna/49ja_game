@@ -5,7 +5,7 @@ Admin Blueprint — handles login, logout, and the protected admin dashboard.
 from datetime import timedelta
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from sqlalchemy import or_, and_
+from sqlalchemy import and_, or_
 
 from models import storage
 from models.admin import Admin
@@ -19,7 +19,7 @@ from utils.auth import (
 from utils.logger import get_logger
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
-logger = get_logger("admin")
+logger = get_logger(__name__, "server.log")
 
 # Keep sessions alive for 8 hours by default
 SESSION_LIFETIME = timedelta(hours=8)
@@ -93,6 +93,7 @@ def logout():
 @login_required
 def dashboard():
     """Main admin dashboard — protected."""
+    from models.notification_email import NotificationEmail
     from utils.auth import current_admin_id
     from utils.auth import is_super_admin as _is_super
 
@@ -105,14 +106,113 @@ def dashboard():
             if _is_super()
             else []
         )
+        notification_emails = (
+            storage.session()
+            .query(NotificationEmail)
+            .order_by(NotificationEmail.id)
+            .all()
+            if _is_super()
+            else []
+        )
     except Exception as e:
         logger.error(f"DB error loading admin dashboard: {e}")
         current = None
         all_admins = []
+        notification_emails = []
 
     return render_template(
         "admin/dashboard.html",
         current_admin=current,
         all_admins=all_admins,
+        notification_emails=notification_emails,
         is_super=_is_super(),
     )
+
+
+# ---------------------------------------------------------------------------
+# Email Recipient Management (super admin only)
+# ---------------------------------------------------------------------------
+
+
+@admin_bp.route("/emails", methods=["POST"])
+@super_admin_required
+def add_email():
+    """Register a new notification email recipient."""
+    from models.notification_email import NotificationEmail
+
+    email_addr = request.form.get("email", "").strip().lower()
+    label = request.form.get("label", "").strip() or None
+    try:
+        threshold = int(request.form.get("threshold", 8))
+        threshold = max(1, min(threshold, 20))
+    except (ValueError, TypeError):
+        threshold = 8
+
+    if not email_addr:
+        flash("Email address is required.", "danger")
+        return redirect(url_for("admin.dashboard"))
+
+    # Duplicate check
+    existing = (
+        storage.session().query(NotificationEmail).filter_by(email=email_addr).first()
+    )
+    if existing:
+        flash(f"'{email_addr}' is already registered.", "warning")
+        return redirect(url_for("admin.dashboard"))
+
+    try:
+        entry = NotificationEmail(
+            email=email_addr, label=label, alert_threshold=threshold
+        )
+        entry.save()
+        flash(f"✅ '{email_addr}' added with threshold={threshold}.", "success")
+        logger.info(
+            "Notification email added: %s (threshold=%d)", email_addr, threshold
+        )
+    except Exception as e:
+        logger.error("Failed to add notification email: %s", e)
+        flash("Failed to add email. Please try again.", "danger")
+
+    return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.route("/emails/<int:email_id>/delete", methods=["POST"])
+@super_admin_required
+def delete_email(email_id):
+    """Remove a notification email recipient."""
+    from models.notification_email import NotificationEmail
+
+    entry = storage.session().query(NotificationEmail).get(email_id)
+    if not entry:
+        flash("Email not found.", "danger")
+        return redirect(url_for("admin.dashboard"))
+
+    addr = entry.email
+    try:
+        entry.delete()
+        storage.save()
+        flash(f"🗑️ '{addr}' removed.", "success")
+        logger.info("Notification email deleted: %s", addr)
+    except Exception as e:
+        logger.error("Failed to delete notification email: %s", e)
+        flash("Failed to delete. Please try again.", "danger")
+
+    return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.route("/emails/<int:email_id>/toggle", methods=["POST"])
+@super_admin_required
+def toggle_email(email_id):
+    """Toggle active/inactive status of a notification email."""
+    from models.notification_email import NotificationEmail
+
+    entry = storage.session().query(NotificationEmail).get(email_id)
+    if not entry:
+        flash("Email not found.", "danger")
+        return redirect(url_for("admin.dashboard"))
+
+    entry.is_active = not entry.is_active
+    storage.save()
+    status = "activated" if entry.is_active else "deactivated"
+    flash(f"📧 '{entry.email}' {status}.", "success")
+    return redirect(url_for("admin.dashboard"))

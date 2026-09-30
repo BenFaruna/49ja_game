@@ -12,7 +12,7 @@ from utils.helper import compute_analytics, parse_datetime_param
 from utils.logger import get_logger
 
 router = Blueprint("router", __name__)
-logger = get_logger(log_file="server.log")
+logger = get_logger(__name__, "server.log")
 
 
 @router.route("/")
@@ -251,6 +251,7 @@ def api_stats():
     except Exception as e:
         logger.error(f"Error in api_stats: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @router.route("/switch-analytics", strict_slashes=False)
 def switch_analytics():

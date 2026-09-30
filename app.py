@@ -15,7 +15,7 @@ from utils.converter import decide_number_color
 from utils.helper import compute_analytics
 from utils.logger import get_logger
 
-logger = get_logger("app")
+logger = get_logger(__name__, "server.log")
 
 app = Flask(__name__)
 

@@ -1,18 +1,19 @@
 import re
 import time
+
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException,
-    StaleElementReferenceException,
-    WebDriverException,
-)
 
 from utils.logger import get_logger
 
-logger = get_logger("driver_functions")
+logger = get_logger(__name__)
 
 
 def extract_draw_id(text: str) -> int | None:

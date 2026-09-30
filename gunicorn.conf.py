@@ -1,9 +1,10 @@
 # Gunicorn Configuration File
 import threading
+
 from scraper import scrape
 from utils.logger import get_logger
 
-logger = get_logger("gunicorn_master")
+logger = get_logger(__name__, "server.log")
 
 # Server Socket
 bind = "0.0.0.0:5000"

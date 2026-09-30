@@ -98,17 +98,91 @@
         </div>
         <div class="stat-card">
           <p class="label">Notification Emails</p>
-          <p class="value">—</p>
-          <p class="sub">Coming soon</p>
+          <p class="value">{{ notification_emails | length if is_super else '—' }}</p>
+          <p class="sub">Active recipients</p>
         </div>
       </div>
 
-      <!-- Email management placeholder -->
-      <div class="coming-soon">
-        <div class="cs-icon">📧</div>
-        <p><strong>Notification Email Management</strong></p>
-        <p style="margin-top:.4rem;">Add and manage email recipients for game alerts. Coming in the next sprint.</p>
+      <!-- Email management section (super admin only) -->
+      {% if is_super %}
+      <div class="email-management-section">
+        <p class="section-title">📧 Notification Email Recipients</p>
+
+        <!-- Add email form -->
+        <form action="{{ url_for('admin.add_email') }}" method="POST" class="email-add-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email-input">Email Address *</label>
+              <input type="email" id="email-input" name="email" required
+                     placeholder="alert@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="label-input">Label</label>
+              <input type="text" id="label-input" name="label"
+                     placeholder="e.g. Team Lead" />
+            </div>
+            <div class="form-group form-group-sm">
+              <label for="threshold-input">Threshold</label>
+              <input type="number" id="threshold-input" name="threshold"
+                     value="8" min="1" max="20" />
+            </div>
+            <button type="submit" class="btn btn-add">+ Add</button>
+          </div>
+        </form>
+
+        <!-- Recipient table -->
+        {% if notification_emails %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Email</th>
+                <th>Label</th>
+                <th>Threshold</th>
+                <th>Status</th>
+                <th>Added</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ne in notification_emails %}
+              <tr>
+                <td style="color:var(--text-muted);">{{ ne.id }}</td>
+                <td><strong>{{ ne.email }}</strong></td>
+                <td style="color:var(--text-muted);">{{ ne.label or '—' }}</td>
+                <td style="text-align:center;">
+                  <span class="badge badge-threshold">{{ ne.alert_threshold }}</span>
+                </td>
+                <td>
+                  <span class="status-dot {{ 'dot-active' if ne.is_active else 'dot-inactive' }}"></span>
+                  {{ 'Active' if ne.is_active else 'Inactive' }}
+                </td>
+                <td style="color:var(--text-muted);">
+                  {% if ne.created_at %}{{ ne.created_at.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+                </td>
+                <td class="action-btns">
+                  <form action="{{ url_for('admin.toggle_email', email_id=ne.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm {{ 'btn-deactivate' if ne.is_active else 'btn-activate' }}"
+                            title="{{ 'Deactivate' if ne.is_active else 'Activate' }}">
+                      {{ '⏸️' if ne.is_active else '▶️' }}
+                    </button>
+                  </form>
+                  <form action="{{ url_for('admin.delete_email', email_id=ne.id) }}" method="POST" style="display:inline;"
+                        onsubmit="return confirm('Delete {{ ne.email }}?');">
+                    <button type="submit" class="btn btn-sm btn-delete" title="Delete">🗑️</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No notification emails registered yet. Add one above.</p>
+        {% endif %}
       </div>
+      {% endif %}
 
       <!-- Admin list (super only) -->
       {% if is_super and all_admins %}

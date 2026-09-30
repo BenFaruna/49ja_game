@@ -43,3 +43,11 @@ deploy:
 .PHONY: deploy-podman
 deploy-podman:
 	podman compose up -d --build
+
+## test-email: send a test email to verify SMTP config (pass EMAIL=addr@example.com)
+.PHONY: test-email
+test-email:
+	@echo "Sending test email to $(EMAIL)..."
+	python -c "from utils.email_service import _send_email, _is_configured; \
+	  assert _is_configured(), 'SMTP not configured — set SMTP_USER and SMTP_PASSWORD in .env'; \
+	  _send_email('$(EMAIL)', '✅ 49ja Test Email', '<h2>SMTP is working!</h2><p>Your email configuration is correct.</p>')"

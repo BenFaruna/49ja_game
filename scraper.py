@@ -12,7 +12,7 @@ from utils.converter import color_count, color_decision, total_category
 from utils.driver import check_id_of_current_draw, get_ball_values
 from utils.logger import get_logger
 
-logger = get_logger("scraper")
+logger = get_logger(__name__)
 
 # Driver Setup
 _options = webdriver.FirefoxOptions()
@@ -120,6 +120,7 @@ def run_scraper_session():
                 # Feed the new draw into the switch trigger monitor
                 try:
                     from utils.switch_service import process_new_draw
+
                     process_new_draw(game_data)
                 except Exception as switch_err:
                     logger.error(
