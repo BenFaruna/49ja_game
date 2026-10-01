@@ -12,8 +12,8 @@ services:
       - ./game_data.db:/app/game_data.db:z
       - ./app.log:/app/app.log:z
       - ./server.log:/app/server.log:z
-    environment:
-      - DB_URL=sqlite:///game_data.db
+    env_file:
+      - .env
     logging:
       driver: "json-file"
       options:
