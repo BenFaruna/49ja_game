@@ -1,6 +1,8 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: 49ja_game
     restart: always
     ports:
