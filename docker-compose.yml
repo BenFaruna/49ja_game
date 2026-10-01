@@ -9,6 +9,7 @@ services:
     volumes:
       - ./game_data.db:/app/game_data.db:z
       - ./app.log:/app/app.log:z
+      - ./server.log:/app/server.log:z
     environment:
       - DB_URL=sqlite:///game_data.db
     logging:
