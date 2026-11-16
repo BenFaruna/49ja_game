@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -103,6 +104,62 @@ def _build_alert_html(game_id: int, trigger_ids: List[int], overall_losses: int)
 # ---------------------------------------------------------------------------
 # Send logic
 # ---------------------------------------------------------------------------
+
+
+def _build_error_html(message: str, suppressed: int) -> str:
+    """Return a plain HTML body for an application error alert."""
+    extra = ""
+    if suppressed:
+        extra = (
+            f"<p style=\"font-size:13px; color:#ffc107;\">"
+            f"{suppressed} further error(s) were suppressed since the last alert."
+            f"</p>"
+        )
+
+    return f"""
+    <div style="font-family:'Inter',Arial,sans-serif; max-width:560px; margin:auto;
+                background:#1a1a2e; color:#e0e0e0; border-radius:12px;
+                overflow:hidden; border:1px solid #2a2a4a;">
+      <div style="background:linear-gradient(135deg,#e94560,#c23152);
+                  padding:20px 24px; text-align:center;">
+        <h1 style="margin:0; font-size:20px; color:#fff;">⚠️ 49ja Error Alert</h1>
+      </div>
+      <div style="padding:20px 24px;">
+        <pre style="white-space:pre-wrap; font-size:12px; color:#e0e0e0;
+                    background:#16213e; padding:12px; border-radius:6px;">{html.escape(message)}</pre>
+        {extra}
+        <p style="font-size:12px; color:#6c7293; margin-top:16px; text-align:center;">
+          This is an automated alert from 49ja Analytics.
+        </p>
+      </div>
+    </div>
+    """
+
+
+def send_error_alert(message: str, suppressed: int = 0) -> int:
+    """Email the configured recipients about an application error.
+
+    Returns the number of emails sent. Never raises.
+    """
+    if not _is_configured():
+        return 0
+
+    recipients = get_active_recipients()
+    if not recipients:
+        return 0
+
+    subject = "⚠️ 49ja Error Alert"
+    html_body = _build_error_html(message, suppressed)
+
+    sent = 0
+    for recipient in recipients:
+        try:
+            if _send_email(recipient.email, subject, html_body):
+                sent += 1
+        except Exception:
+            continue
+
+    return sent
 
 
 def _send_email(to_addr: str, subject: str, html_body: str) -> bool:

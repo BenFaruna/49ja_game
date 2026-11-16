@@ -13,9 +13,13 @@ from routes_admin import admin_bp
 from scraper import scrape
 from utils.converter import decide_number_color
 from utils.helper import compute_analytics
+from utils.log_alerts import install_error_alert_handler
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Email alerts for ERROR records; the handler rate limits itself.
+install_error_alert_handler()
 
 app = Flask(__name__)
 
