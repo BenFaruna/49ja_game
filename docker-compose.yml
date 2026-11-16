@@ -10,8 +10,7 @@ services:
     shm_size: "1gb" # Crucial for preventing Firefox tab crashes
     volumes:
       - ./game_data.db:/app/game_data.db:z
-      - ./app.log:/app/app.log:z
-      - ./server.log:/app/server.log:z
+      - ./logs:/app/logs:z
     env_file:
       - .env
     logging:

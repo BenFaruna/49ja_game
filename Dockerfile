@@ -19,7 +19,7 @@ RUN wget -q https://github.com/mozilla/geckodriver/releases/download/${GECKODRIV
     && rm geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz
 
 WORKDIR /app
-RUN touch game_data.db app.log
+RUN mkdir -p logs && touch game_data.db
 
 # Install Python dependencies
 COPY requirements.txt .
