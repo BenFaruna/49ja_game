@@ -331,9 +331,28 @@ class DBStorage:
     def reload(self):
         """reloads data from the database"""
         Base.metadata.create_all(self.__engine)
+        self._ensure_indexes()
         sess_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
         session = scoped_session(sess_factory)
         self.__session = session
+
+    def _ensure_indexes(self):
+        """Create the indexes the read paths rely on, for databases that predate them.
+
+        ``create_all`` never alters an existing table, so a database that already
+        has ``game_data`` would never get the new index without this. The DDL is
+        idempotent, so it is just a no-op on every start after the first.
+        """
+        try:
+            with self.__engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS ix_game_data_date "
+                        "ON game_data (date)"
+                    )
+                )
+        except Exception as e:
+            logger.error(f"Index creation failed: {e}")
 
     def session(self):
         """Return the current scoped session for direct model queries."""

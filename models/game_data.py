@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Index, Integer, String
 
 from models.base import Base, BaseModel
 
@@ -6,6 +6,9 @@ from models.base import Base, BaseModel
 class GameData(BaseModel, Base):
     """ORM for game data"""
     __tablename__ = "game_data"
+
+    # Serves the time-window filters and the "newest first" ordering.
+    __table_args__ = (Index("ix_game_data_date", "date"),)
 
     id = Column(Integer, primary_key=True, nullable=False)
     first = Column(Integer, nullable=False)
