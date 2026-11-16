@@ -14,7 +14,7 @@ import models
 from models.notification_email import NotificationEmail
 from utils.logger import get_logger
 
-logger = get_logger(__name__, "server.log")
+logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Config — sourced from environment variables

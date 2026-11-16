@@ -19,7 +19,7 @@ from utils.auth import (
 from utils.logger import get_logger
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
-logger = get_logger(__name__, "server.log")
+logger = get_logger(__name__)
 
 # Keep sessions alive for 8 hours by default
 SESSION_LIFETIME = timedelta(hours=8)

@@ -4,7 +4,7 @@ import threading
 from scraper import scrape
 from utils.logger import get_logger
 
-logger = get_logger(__name__, "server.log")
+logger = get_logger(__name__)
 
 # Server Socket
 bind = "0.0.0.0:5000"

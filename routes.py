@@ -12,7 +12,7 @@ from utils.helper import compute_analytics, parse_datetime_param
 from utils.logger import get_logger
 
 router = Blueprint("router", __name__)
-logger = get_logger(__name__, "server.log")
+logger = get_logger(__name__)
 
 
 @router.route("/")
