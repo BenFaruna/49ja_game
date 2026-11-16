@@ -10,7 +10,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from models.game_data import GameData
 from utils.converter import color_count, color_decision, total_category
 from utils.driver import check_id_of_current_draw, get_ball_values
-from utils.heartbeat import start_heartbeat
+from utils.heartbeat import record_progress, start_heartbeat
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -127,6 +127,10 @@ def run_scraper_session():
                     logger.error(
                         f"Switch trigger processing failed for #{data['id']}: {switch_err}"
                     )
+
+                # Feed the progress-based heartbeat, so a stalled loop shows
+                # up as a log that stops growing.
+                record_progress(f"draw #{data['id']}")
             except Exception as e:
                 logger.error(f"Failed to save GameData #{data['id']} to database: {e}")
 
