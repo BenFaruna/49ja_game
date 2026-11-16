@@ -10,6 +10,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from models.game_data import GameData
 from utils.converter import color_count, color_decision, total_category
 from utils.driver import check_id_of_current_draw, get_ball_values
+from utils.heartbeat import start_heartbeat
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -145,6 +146,7 @@ def scrape():
     Main background scraping loop with automated crash recovery and reconnects.
     """
     logger.info("Starting resilient scraper background thread...")
+    start_heartbeat()
     while True:
         try:
             run_scraper_session()
