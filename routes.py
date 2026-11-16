@@ -15,33 +15,49 @@ router = Blueprint("router", __name__)
 logger = get_logger(__name__)
 
 
+DEFAULT_TIME_HOURS = 0.5
+
+def parse_hours(raw) -> float:
+    """Parse the ``time`` filter, in hours.
+
+    Missing or invalid values fall back to the 30-minute default; an explicit
+    ``0`` still means All Time.
+    """
+    if raw is None or str(raw).strip() == "":
+        return DEFAULT_TIME_HOURS
+    try:
+        return float(raw)
+    except (ValueError, TypeError):
+        return DEFAULT_TIME_HOURS
+
+
+def window_label(hours: float) -> str:
+    """Human label for a relative time window."""
+    if hours and hours > 0:
+        return f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
+    return "All Time"
+
+
 @router.route("/")
 def home():
     """Dashboard Homepage with Time Filter"""
-    try:
-        hours = float(request.args.get("time", 0))
-    except (ValueError, TypeError):
-        hours = 0.0
+    hours = parse_hours(request.args.get("time"))
+    category_label = window_label(hours)
 
     try:
-        if hours > 0:
-            temp_data = storage.time_diff(hours)
-            category_label = (
-                f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
-            )
-        else:
-            temp_data = storage.all()
-            category_label = "All Time"
-
+        temp_data = storage.time_diff(hours) if hours > 0 else storage.all()
         data_list = [*temp_data.values()][-1::-1] if temp_data else []
         analytics = compute_analytics(data_list)
-        recent_draws = data_list[:10]
+
+        recent_draws = storage.recent(10)
+        if recent_draws:
+            # The banner and preview always show the newest draws, even when
+            # the selected window is empty.
+            analytics["latest_draw"] = recent_draws[0]
     except Exception as e:
         logger.error(f"Error loading dashboard data: {e}")
-        data_list = []
         analytics = compute_analytics([])
         recent_draws = []
-        category_label = "All Time"
 
     return render_template(
         "dashboard.html",
@@ -196,10 +212,7 @@ def export_csv():
 @router.route("/api/stats")
 def api_stats():
     """JSON Endpoint for Live Dashboard Auto-Refresh (Supports ?time=X)"""
-    try:
-        hours = float(request.args.get("time", 0))
-    except (ValueError, TypeError):
-        hours = 0.0
+    hours = parse_hours(request.args.get("time"))
 
     try:
         if hours > 0:
@@ -338,10 +351,7 @@ def api_switch_tracker_alerts():
 
 def get_filtered_history_data(request_args):
     """Parses filter args and returns (filtered_list, category_label, selected_params)."""
-    try:
-        hours = float(request_args.get("time", 0))
-    except (ValueError, TypeError):
-        hours = 0.0
+    hours = parse_hours(request_args.get("time"))
 
     try:
         occurrence = int(request_args.get("occurrence", 0))

@@ -90,6 +90,20 @@ class DBStorage:
             self.__session.rollback()
             return {}
 
+    def recent(self, limit=10):
+        """Return the newest draws, most recent first."""
+        try:
+            return (
+                self.__session.query(GameData)
+                .order_by(GameData.date.desc(), GameData.id.desc())
+                .limit(int(limit))
+                .all()
+            )
+        except Exception as e:
+            logger.error(f"Database query error in recent(): {e}")
+            self.__session.rollback()
+            return []
+
     def new(self, obj):
         """add the object to the current database session"""
         try:
