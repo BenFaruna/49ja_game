@@ -169,6 +169,7 @@ docker compose up -d --build
 ├── Caddyfile              # Caddy reverse proxy configuration
 ├── Dockerfile             # Container definition (Python + Firefox ESR + GeckoDriver)
 ├── docker-compose.yml     # Multi-container orchestration (App + Caddy)
+├── logs/                  # Application logs (1 MB per file, 5 backups)
 ├── models/
 │   ├── base.py            # SQLAlchemy base & datetime model
 │   ├── engine.py          # DBStorage engine (filter_draws, time_diff, save)
