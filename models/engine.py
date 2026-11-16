@@ -226,6 +226,83 @@ class DBStorage:
             self.__session.rollback()
             return []
 
+    def count_draws(
+        self, hours=0.0, start_datetime=None, end_datetime=None, occurrence=0
+    ):
+        """Count draws matching the filters, in the database."""
+        try:
+            conditions = self._conditions(
+                hours=hours,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                occurrence=occurrence,
+            )
+            total = self.__session.query(func.count(GameData.id)).filter(
+                *conditions
+            ).scalar()
+            return int(total or 0)
+        except Exception as e:
+            logger.error(f"Database query error in count_draws(): {e}")
+            self.__session.rollback()
+            return 0
+
+    def page_draws(
+        self,
+        hours=0.0,
+        start_datetime=None,
+        end_datetime=None,
+        occurrence=0,
+        limit=25,
+        offset=0,
+    ):
+        """Return one page of draws, newest first."""
+        try:
+            conditions = self._conditions(
+                hours=hours,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                occurrence=occurrence,
+            )
+            return (
+                self.__session.query(GameData)
+                .filter(*conditions)
+                .order_by(GameData.date.desc(), GameData.id.desc())
+                .limit(int(limit))
+                .offset(int(offset))
+                .all()
+            )
+        except Exception as e:
+            logger.error(f"Database query error in page_draws(): {e}")
+            self.__session.rollback()
+            return []
+
+    def iter_draws(
+        self,
+        hours=0.0,
+        start_datetime=None,
+        end_datetime=None,
+        occurrence=0,
+        batch_size=1000,
+    ):
+        """Yield draws newest first without materialising them all (used by CSV export)."""
+        try:
+            conditions = self._conditions(
+                hours=hours,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                occurrence=occurrence,
+            )
+            query = (
+                self.__session.query(GameData)
+                .filter(*conditions)
+                .order_by(GameData.date.desc(), GameData.id.desc())
+                .yield_per(int(batch_size))
+            )
+            yield from query
+        except Exception as e:
+            logger.error(f"Database query error in iter_draws(): {e}")
+            self.__session.rollback()
+
     def new(self, obj):
         """add the object to the current database session"""
         try:

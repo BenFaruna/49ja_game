@@ -14,8 +14,28 @@ from utils.logger import get_logger
 router = Blueprint("router", __name__)
 logger = get_logger(__name__)
 
-
+# The dashboard and history default to the last 30 minutes; an explicit
+# ?time=0 still selects All Time.
 DEFAULT_TIME_HOURS = 0.5
+
+CSV_HEADER = (
+    "Draw ID",
+    "Date & Time (UTC)",
+    "Ball 1",
+    "Ball 2",
+    "Ball 3",
+    "Ball 4",
+    "Ball 5",
+    "Ball 6",
+    "Dominant Color",
+    "Range",
+    "Total",
+    "Red Count",
+    "Green Count",
+    "Blue Count",
+    "Yellow Count",
+)
+
 
 def parse_hours(raw) -> float:
     """Parse the ``time`` filter, in hours.
@@ -86,16 +106,30 @@ def history():
     except (ValueError, TypeError):
         per_page = 25
 
+    params = parse_history_filters(request.args)
+    category_label = history_label(params)
+
     try:
-        filtered_list, category_label, params = get_filtered_history_data(request.args)
-        total_items = len(filtered_list)
+        total_items = storage.count_draws(
+            hours=params["hours"],
+            start_datetime=params["start_dt"],
+            end_datetime=params["end_dt"],
+            occurrence=params["occurrence"],
+        )
         total_pages = math.ceil(total_items / per_page) if total_items > 0 else 1
         if page > total_pages:
             page = total_pages
 
         start_idx = (page - 1) * per_page
-        end_idx = min(start_idx + per_page, total_items)
-        page_data = filtered_list[start_idx:end_idx]
+        page_data = storage.page_draws(
+            hours=params["hours"],
+            start_datetime=params["start_dt"],
+            end_datetime=params["end_dt"],
+            occurrence=params["occurrence"],
+            limit=per_page,
+            offset=start_idx,
+        )
+        end_idx = start_idx + len(page_data)
 
         has_prev = page > 1
         has_next = page < total_pages
@@ -111,7 +145,6 @@ def history():
         has_next = False
         start_idx = 0
         end_idx = 0
-        params = {"hours": 0, "occurrence": 0, "start_str": "", "end_str": ""}
 
     return render_template(
         "history.html",
@@ -138,66 +171,63 @@ def history():
 def export_csv():
     """Export Filtered Draw History Data as CSV file download."""
     try:
-        filtered_list, _, _ = get_filtered_history_data(request.args)
+        params = parse_history_filters(request.args)
 
         tz_offset = request.args.get("tz_offset", 0)
         tz_delta = timedelta(minutes=-float(tz_offset))
 
-        output = io.StringIO()
-        writer = csv.writer(output)
-
-        # Write CSV Header
-        writer.writerow(
-            [
-                "Draw ID",
-                "Date & Time (UTC)",
-                "Ball 1",
-                "Ball 2",
-                "Ball 3",
-                "Ball 4",
-                "Ball 5",
-                "Ball 6",
-                "Dominant Color",
-                "Range",
-                "Total",
-                "Red Count",
-                "Green Count",
-                "Blue Count",
-                "Yellow Count",
-            ]
+        draws = storage.iter_draws(
+            hours=params["hours"],
+            start_datetime=params["start_dt"],
+            end_datetime=params["end_dt"],
+            occurrence=params["occurrence"],
         )
 
-        # Write Data Rows
-        for item in filtered_list:
-            writer.writerow(
-                [
-                    item.id,
-                    (
-                        (item.date + tz_delta).strftime("%Y-%m-%d %H:%M:%S")
-                        if item.date
-                        else ""
-                    ),
-                    item.first,
-                    item.second,
-                    item.third,
-                    item.fourth,
-                    item.fifth,
-                    item.sixth,
-                    item.colour,
-                    item.hi_lo_mid,
-                    item.total,
-                    item.r_count,
-                    item.g_count,
-                    item.b_count,
-                    item.y_count,
-                ]
-            )
+        def generate():
+            """Stream the CSV in chunks instead of holding every row at once."""
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+            writer.writerow(CSV_HEADER)
+
+            pending = 0
+            for item in draws:
+                writer.writerow(
+                    [
+                        item.id,
+                        (
+                            (item.date + tz_delta).strftime("%Y-%m-%d %H:%M:%S")
+                            if item.date
+                            else ""
+                        ),
+                        item.first,
+                        item.second,
+                        item.third,
+                        item.fourth,
+                        item.fifth,
+                        item.sixth,
+                        item.colour,
+                        item.hi_lo_mid,
+                        item.total,
+                        item.r_count,
+                        item.g_count,
+                        item.b_count,
+                        item.y_count,
+                    ]
+                )
+                pending += 1
+                if pending >= 1000:
+                    yield buffer.getvalue()
+                    buffer.seek(0)
+                    buffer.truncate(0)
+                    pending = 0
+
+            yield buffer.getvalue()
 
         csv_filename = (
             f"49ja_draw_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         )
         return Response(
-            output.getvalue(),
+            generate(),
             mimetype="text/csv",
             headers={"Content-Disposition": f"attachment; filename={csv_filename}"},
         )
@@ -343,10 +373,8 @@ def api_switch_tracker_alerts():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-def get_filtered_history_data(request_args):
-    """Parses filter args and returns (filtered_list, category_label, selected_params)."""
-    hours = parse_hours(request_args.get("time"))
-
+def parse_history_filters(request_args) -> dict:
+    """Parse the history query string into values the storage layer can use."""
     try:
         occurrence = int(request_args.get("occurrence", 0))
     except (ValueError, TypeError):
@@ -364,43 +392,28 @@ def get_filtered_history_data(request_args):
     except (ValueError, TypeError):
         tz_offset = None
 
-    start_dt = parse_datetime_param(start_str, tz_offset)
-    end_dt = parse_datetime_param(end_str, tz_offset)
+    return {
+        "hours": parse_hours(request_args.get("time")),
+        "occurrence": occurrence,
+        "start_str": start_str,
+        "end_str": end_str,
+        "start_dt": parse_datetime_param(start_str, tz_offset),
+        "end_dt": parse_datetime_param(end_str, tz_offset),
+    }
 
-    temp_data = storage.filter_draws(
-        hours=hours,
-        start_datetime=start_dt,
-        end_datetime=end_dt,
-        occurrence=occurrence,
-    )
 
-    temp_list = [*temp_data.values()][-1::-1] if temp_data else []
-
-    if start_str and end_str:
-        category_label = (
-            f"From {start_str.replace('T', ' ')} to {end_str.replace('T', ' ')}"
-        )
-    elif start_str:
-        category_label = f"From {start_str.replace('T', ' ')}"
-    elif end_str:
-        category_label = f"Up to {end_str.replace('T', ' ')}"
-    elif hours > 0:
-        category_label = (
-            f"{int(hours * 60)} mins" if hours < 1 else f"{int(hours)} hours"
-        )
+def history_label(params: dict) -> str:
+    """Label describing the history filter currently applied."""
+    if params["start_str"] and params["end_str"]:
+        label = f"From {params['start_str'].replace('T', ' ')} to {params['end_str'].replace('T', ' ')}"
+    elif params["start_str"]:
+        label = f"From {params['start_str'].replace('T', ' ')}"
+    elif params["end_str"]:
+        label = f"Up to {params['end_str'].replace('T', ' ')}"
     else:
-        category_label = "All Time"
+        label = window_label(params["hours"])
 
-    if occurrence > 0:
-        category_label += f" | {occurrence} Same Color"
+    if params["occurrence"] > 0:
+        label += f" | {params['occurrence']} Same Color"
 
-    return (
-        temp_list,
-        category_label,
-        {
-            "hours": hours,
-            "occurrence": occurrence,
-            "start_str": start_str,
-            "end_str": end_str,
-        },
-    )
+    return label
