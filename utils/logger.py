@@ -1,5 +1,9 @@
+import gzip
 import logging
+import os
+import shutil
 import sys
+import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -14,6 +18,9 @@ LOG_FILE = LOG_DIR / "app.log"
 MAX_LOG_BYTES = 1 * 1024 * 1024
 LOG_BACKUP_COUNT = 5
 
+# Backups older than this many days are deleted, even when rotation is idle.
+LOG_RETENTION_DAYS = 30
+
 _FORMATTER = logging.Formatter(
     "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
 )
@@ -23,13 +30,64 @@ _FORMATTER = logging.Formatter(
 _file_handler = None
 
 
-def _get_file_handler() -> RotatingFileHandler:
+class GzipRotatingFileHandler(RotatingFileHandler):
+    """
+    Rotating file handler that gzips every backup.
+
+    Backups are kept as ``app.log.1.gz`` ... ``app.log.N.gz``, capped at
+    ``backupCount`` files, and any backup older than ``max_age_days`` is
+    removed on startup and at every rollover, so a quiet period cannot leave
+    stale logs behind and a busy one cannot grow without bound.
+    """
+
+    def __init__(self, *args, max_age_days: int | None = None, **kwargs):
+        self.max_age_days = max_age_days
+        super().__init__(*args, **kwargs)
+        self.rotator = self._gzip_and_remove
+        self._delete_expired()
+
+    def rotation_filename(self, default_name: str) -> str:
+        """Name every backup with a .gz suffix so shifts keep the extension."""
+        return default_name + ".gz"
+
+    @staticmethod
+    def _gzip_and_remove(source: str, dest: str) -> None:
+        with open(source, "rb") as src, gzip.open(dest, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        os.remove(source)
+
+    def doRollover(self) -> None:
+        super().doRollover()
+        self._delete_expired()
+
+    def _delete_expired(self) -> None:
+        if not self.max_age_days:
+            return
+
+        cutoff = time.time() - self.max_age_days * 86400
+        prefix = os.path.basename(self.baseFilename) + "."
+        directory = os.path.dirname(self.baseFilename) or "."
+
+        for name in os.listdir(directory):
+            if not name.startswith(prefix) or not name.endswith(".gz"):
+                continue
+            path = os.path.join(directory, name)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+            except OSError:
+                # A concurrent rotation may have removed it already.
+                continue
+
+
+def _get_file_handler() -> GzipRotatingFileHandler:
     global _file_handler
     if _file_handler is None:
-        _file_handler = RotatingFileHandler(
+        _file_handler = GzipRotatingFileHandler(
             LOG_FILE,
             maxBytes=MAX_LOG_BYTES,
             backupCount=LOG_BACKUP_COUNT,
+            max_age_days=LOG_RETENTION_DAYS,
             encoding="utf-8",
         )
         _file_handler.setLevel(logging.WARNING)
