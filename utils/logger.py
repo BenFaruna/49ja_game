@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import time
+from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -21,8 +22,22 @@ LOG_BACKUP_COUNT = 5
 # Backups older than this many days are deleted, even when rotation is idle.
 LOG_RETENTION_DAYS = 30
 
+# Request id stamped on records by app.py; "-" outside a web request.
+request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
+
+
+class RequestIdFilter(logging.Filter):
+    """Attach the current request id to every log record."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = request_id_var.get()
+        return True
+
+
+_REQUEST_ID_FILTER = RequestIdFilter()
+
 _FORMATTER = logging.Formatter(
-    "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
+    "[%(asctime)s] [%(levelname)s] [%(name)s] [%(request_id)s]: %(message)s"
 )
 
 # One shared file handler: several handlers writing to the same rotating file
@@ -92,6 +107,7 @@ def _get_file_handler() -> GzipRotatingFileHandler:
         )
         _file_handler.setLevel(logging.WARNING)
         _file_handler.setFormatter(_FORMATTER)
+        _file_handler.addFilter(_REQUEST_ID_FILTER)
     return _file_handler
 
 
@@ -108,6 +124,7 @@ def get_logger(name: str = "49ja_game") -> logging.Logger:
     c_handler = logging.StreamHandler(sys.stdout)
     c_handler.setLevel(logging.DEBUG)
     c_handler.setFormatter(_FORMATTER)
+    c_handler.addFilter(_REQUEST_ID_FILTER)
     logger.addHandler(c_handler)
 
     # Rotating File Handler
