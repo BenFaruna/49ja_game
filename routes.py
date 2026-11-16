@@ -45,10 +45,7 @@ def home():
     category_label = window_label(hours)
 
     try:
-        temp_data = storage.time_diff(hours) if hours > 0 else storage.all()
-        data_list = [*temp_data.values()][-1::-1] if temp_data else []
-        analytics = compute_analytics(data_list)
-
+        analytics = storage.analytics(hours)
         recent_draws = storage.recent(10)
         if recent_draws:
             # The banner and preview always show the newest draws, even when
@@ -215,13 +212,10 @@ def api_stats():
     hours = parse_hours(request.args.get("time"))
 
     try:
-        if hours > 0:
-            temp_data = storage.time_diff(hours)
-        else:
-            temp_data = storage.all()
+        analytics = storage.analytics(hours)
 
-        data_list = [*temp_data.values()][-1::-1] if temp_data else []
-        analytics = compute_analytics(data_list)
+        latest_rows = storage.recent(1)
+        analytics["latest_draw"] = latest_rows[0] if latest_rows else None
 
         latest = analytics["latest_draw"]
         latest_dict = None

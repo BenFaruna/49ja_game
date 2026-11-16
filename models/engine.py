@@ -5,7 +5,7 @@ Contains the class DBStorage
 from datetime import datetime, timedelta, timezone
 from os import getenv
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, select, text, union_all
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 import models
@@ -14,6 +14,8 @@ from models.game_data import GameData
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+BALL_COLUMNS = ("first", "second", "third", "fourth", "fifth", "sixth")
 
 
 class DBStorage:
@@ -64,23 +66,18 @@ class DBStorage:
         """Query game data filtered by time window, explicit datetime bounds, and color occurrence."""
         new_dict = {}
         try:
-            query = self.__session.query(GameData)
-            if start_datetime:
-                query = query.filter(GameData.date >= start_datetime)
-            if end_datetime:
-                query = query.filter(GameData.date <= end_datetime)
-            if not start_datetime and not end_datetime and hours > 0:
-                utc_cutoff = datetime.now(timezone.utc).replace(
-                    tzinfo=None
-                ) - timedelta(hours=float(hours))
-                query = query.filter(GameData.date >= utc_cutoff)
-            if occurrence > 0:
-                query = query.filter(
-                    (GameData.r_count == occurrence)
-                    | (GameData.g_count == occurrence)
-                    | (GameData.b_count == occurrence)
+            objs = (
+                self.__session.query(GameData)
+                .filter(
+                    *self._conditions(
+                        hours=hours,
+                        start_datetime=start_datetime,
+                        end_datetime=end_datetime,
+                        occurrence=occurrence,
+                    )
                 )
-            objs = query.all()
+                .all()
+            )
             for obj in objs:
                 key = obj.__class__.__name__ + "." + str(obj.id)
                 new_dict[key] = obj
@@ -89,6 +86,131 @@ class DBStorage:
             logger.error(f"Database query error in filter_draws(): {e}")
             self.__session.rollback()
             return {}
+
+    # ------------------------------------------------------------------
+    # Filtering helpers
+    # ------------------------------------------------------------------
+
+    def _conditions(
+        self, hours=0.0, start_datetime=None, end_datetime=None, occurrence=0
+    ):
+        """Build the SQL filters shared by every read query.
+
+        Explicit datetime bounds win over the relative window, matching the
+        behaviour the history filters have always had.
+        """
+        conditions = []
+
+        if start_datetime:
+            conditions.append(GameData.date >= start_datetime)
+        if end_datetime:
+            conditions.append(GameData.date <= end_datetime)
+
+        if not start_datetime and not end_datetime and hours:
+            hours = float(hours)
+            if hours > 0:
+                utc_cutoff = datetime.now(timezone.utc).replace(
+                    tzinfo=None
+                ) - timedelta(hours=hours)
+                conditions.append(GameData.date >= utc_cutoff)
+
+        if occurrence:
+            occurrence = int(occurrence)
+            if occurrence > 0:
+                conditions.append(
+                    (GameData.r_count == occurrence)
+                    | (GameData.g_count == occurrence)
+                    | (GameData.b_count == occurrence)
+                )
+
+        return conditions
+
+    @staticmethod
+    def _empty_analytics():
+        """The zero-value analytics payload used when there is nothing to aggregate."""
+        return {
+            "total_draws": 0,
+            "latest_draw": None,
+            "color_counts": {"Red": 0, "Blue": 0, "Green": 0, "Yellow": 0, "None": 0},
+            "color_percentages": {
+                "Red": 0,
+                "Blue": 0,
+                "Green": 0,
+                "Yellow": 0,
+                "None": 0,
+            },
+            "hi_lo_mid": {"Hi": 0, "Lo": 0, "Mid": 0},
+            "ball_freq": {n: 0 for n in range(1, 50)},
+            "avg_total": 0,
+        }
+
+    # ------------------------------------------------------------------
+    # Read paths (SQL aggregation and SQL pagination)
+    # ------------------------------------------------------------------
+
+    def analytics(self, hours=0.0, start_datetime=None, end_datetime=None):
+        """Dashboard analytics computed by the database, without loading rows."""
+        result = self._empty_analytics()
+        try:
+            conditions = self._conditions(
+                hours=hours,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+            )
+
+            total_draws, total_sum = self.__session.execute(
+                select(
+                    func.count(GameData.id),
+                    func.coalesce(func.sum(GameData.total), 0),
+                ).where(*conditions)
+            ).one()
+            total_draws = int(total_draws or 0)
+            result["total_draws"] = total_draws
+            if total_draws == 0:
+                return result
+
+            colour_rows = self.__session.execute(
+                select(GameData.colour, func.count(GameData.id))
+                .where(*conditions)
+                .group_by(GameData.colour)
+            ).all()
+            for colour, count in colour_rows:
+                key = colour if colour in result["color_counts"] else "None"
+                result["color_counts"][key] += int(count)
+
+            range_rows = self.__session.execute(
+                select(GameData.hi_lo_mid, func.count(GameData.id))
+                .where(*conditions)
+                .group_by(GameData.hi_lo_mid)
+            ).all()
+            for category, count in range_rows:
+                key = category if category in result["hi_lo_mid"] else "Mid"
+                result["hi_lo_mid"][key] += int(count)
+
+            balls = union_all(
+                *[
+                    select(getattr(GameData, column).label("ball")).where(*conditions)
+                    for column in BALL_COLUMNS
+                ]
+            ).subquery()
+            frequency_rows = self.__session.execute(
+                select(balls.c.ball, func.count()).group_by(balls.c.ball)
+            ).all()
+            for ball, count in frequency_rows:
+                if ball is not None and 1 <= ball <= 49:
+                    result["ball_freq"][int(ball)] += int(count)
+
+            result["color_percentages"] = {
+                name: round((count / total_draws) * 100, 1)
+                for name, count in result["color_counts"].items()
+            }
+            result["avg_total"] = round(total_sum / total_draws, 1)
+
+            return result
+        except Exception as e:
+            logger.error(f"Database analytics error: {e}")
+            self.__session.rollback()
+            return self._empty_analytics()
 
     def recent(self, limit=10):
         """Return the newest draws, most recent first."""
