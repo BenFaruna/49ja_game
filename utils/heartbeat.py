@@ -33,6 +33,16 @@ def record_progress(label: str) -> None:
         _progress_count += 1
 
 
+def progress_count() -> int:
+    """Number of draws handled so far.
+
+    Lets the scraper loop tell "session ended after saving draws" apart from
+    "session ended without saving anything".
+    """
+    with _lock:
+        return _progress_count
+
+
 def start_heartbeat(interval_seconds: int = DEFAULT_INTERVAL_SECONDS) -> None:
     """Start the heartbeat thread once; later calls are ignored."""
     global _started

@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 
 from selenium import webdriver
@@ -10,7 +12,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from models.game_data import GameData
 from utils.converter import color_count, color_decision, total_category
 from utils.driver import check_id_of_current_draw, get_ball_values
-from utils.heartbeat import record_progress, start_heartbeat
+from utils.heartbeat import progress_count, record_progress, start_heartbeat
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,9 +28,51 @@ _options.set_preference(
 )  # Block CSS loading (optional)
 
 
+# First retry after a session ends, doubling up to the maximum.
+RETRY_SECONDS = 10
+MAX_RETRY_SECONDS = 300
+
+_DRIVER_PATH = None
+
+
+def resolve_geckodriver():
+    """Return a geckodriver binary, preferring one that is already installed.
+
+    Downloading through ``webdriver_manager`` needs GitHub access, which fails
+    under API rate limits, and it re-extracts into the same cache path, which
+    fails with ``Text file busy`` while an older driver is still running. The
+    container image installs geckodriver itself, so resolving it from PATH is
+    both faster and reliable.
+    """
+    global _DRIVER_PATH
+    if _DRIVER_PATH:
+        return _DRIVER_PATH
+
+    configured = os.getenv("GECKODRIVER_PATH")
+    if configured and os.path.isfile(configured):
+        _DRIVER_PATH = configured
+        logger.warning(f"Using geckodriver from GECKODRIVER_PATH: {configured}")
+        return _DRIVER_PATH
+
+    found = shutil.which("geckodriver")
+    if found:
+        _DRIVER_PATH = found
+        logger.warning(f"Using installed geckodriver: {found}")
+        return _DRIVER_PATH
+
+    logger.warning(
+        "No geckodriver found on PATH (GECKODRIVER_PATH=%s). Downloading one from "
+        "GitHub — set GECKODRIVER_PATH or install geckodriver to avoid this.",
+        configured or "unset",
+    )
+    _DRIVER_PATH = GeckoDriverManager().install()
+    logger.warning(f"Using downloaded geckodriver: {_DRIVER_PATH}")
+    return _DRIVER_PATH
+
+
 def create_driver():
     """Create and return a new Firefox WebDriver instance."""
-    service = FirefoxService(GeckoDriverManager().install())
+    service = FirefoxService(resolve_geckodriver())
     return webdriver.Firefox(service=service, options=_options)
 
 
@@ -149,13 +193,27 @@ def scrape():
     """
     Main background scraping loop with automated crash recovery and reconnects.
     """
-    logger.info("Starting resilient scraper background thread...")
+    logger.warning("Starting resilient scraper background thread...")
     start_heartbeat()
+
+    backoff = RETRY_SECONDS
     while True:
+        progress_before = progress_count()
         try:
             run_scraper_session()
         except Exception as e:
             logger.error(f"Critical exception in scraper loop: {e}", exc_info=True)
 
-        logger.info("Waiting 10 seconds before restarting scraper session...")
-        time.sleep(10)
+        if progress_count() == progress_before:
+            # The session ended without saving a draw: driver download failure,
+            # browser crash, unreadable page. Back off instead of hammering the
+            # same failure every 10 seconds, and keep it visible in the log.
+            backoff = min(backoff * 2, MAX_RETRY_SECONDS)
+            logger.error(
+                f"Scraper session ended without saving a draw. Retrying in {backoff}s"
+            )
+        else:
+            backoff = RETRY_SECONDS
+            logger.info("Waiting %s seconds before restarting scraper session...", backoff)
+
+        time.sleep(backoff)
