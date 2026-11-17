@@ -97,9 +97,9 @@
       <span>⚖️</span>
     </div>
     <div style="display: flex; gap: 8px; margin-top: 8px;">
-      <span class="badge badge-hi">Hi: {{ analytics.hi_lo_mid.Hi }}</span>
-      <span class="badge badge-lo">Lo: {{ analytics.hi_lo_mid.Lo }}</span>
-      <span class="badge badge-mid">Mid: {{ analytics.hi_lo_mid.Mid }}</span>
+      <span class="badge badge-hi">Hi: <span id="countHi">{{ analytics.hi_lo_mid.Hi }}</span></span>
+      <span class="badge badge-lo">Lo: <span id="countLo">{{ analytics.hi_lo_mid.Lo }}</span></span>
+      <span class="badge badge-mid">Mid: <span id="countMid">{{ analytics.hi_lo_mid.Mid }}</span></span>
     </div>
     <div class="stat-subtext" style="margin-top: 12px;">Category totals distribution</div>
   </div>
@@ -111,10 +111,10 @@
       <span>🎨</span>
     </div>
     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-      <span class="pill pill-red">Red: {{ analytics.color_counts.Red }}</span>
-      <span class="pill pill-blue">Blue: {{ analytics.color_counts.Blue }}</span>
-      <span class="pill pill-green">Green: {{ analytics.color_counts.Green }}</span>
-      <span class="pill pill-None">None: {{ analytics.color_counts.None }}</span>
+      <span class="pill pill-red">Red: <span id="countRed">{{ analytics.color_counts.Red }}</span></span>
+      <span class="pill pill-blue">Blue: <span id="countBlue">{{ analytics.color_counts.Blue }}</span></span>
+      <span class="pill pill-green">Green: <span id="countGreen">{{ analytics.color_counts.Green }}</span></span>
+      <span class="pill pill-none">None: <span id="countNone">{{ analytics.color_counts.None }}</span></span>
     </div>
     <div class="stat-subtext" style="margin-top: 12px;">Color round victories</div>
   </div>
@@ -128,25 +128,25 @@
 
   <div class="progress-container">
     <div class="progress-bar-bg">
-      <div class="progress-segment segment-red" style="width: {{ analytics.color_percentages.Red }}%;"></div>
-      <div class="progress-segment segment-blue" style="width: {{ analytics.color_percentages.Blue }}%;"></div>
-      <div class="progress-segment segment-green" style="width: {{ analytics.color_percentages.Green }}%;"></div>
-      <div class="progress-segment segment-none" style="width: {{ analytics.color_percentages.None }}%;"></div>
+      <div class="progress-segment segment-red" id="segRed" style="width: {{ analytics.color_percentages.Red }}%;"></div>
+      <div class="progress-segment segment-blue" id="segBlue" style="width: {{ analytics.color_percentages.Blue }}%;"></div>
+      <div class="progress-segment segment-green" id="segGreen" style="width: {{ analytics.color_percentages.Green }}%;"></div>
+      <div class="progress-segment segment-none" id="segNone" style="width: {{ analytics.color_percentages.None }}%;"></div>
     </div>
   </div>
 
   <div class="legend-grid">
     <div class="legend-item">
-      <div class="legend-dot" style="background:#ef4444;"></div> Red: {{ analytics.color_percentages.Red }}%
+      <div class="legend-dot" style="background:#ef4444;"></div> Red: <span id="pctRed">{{ analytics.color_percentages.Red }}</span>%
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#3b82f6;"></div> Blue: {{ analytics.color_percentages.Blue }}%
+      <div class="legend-dot" style="background:#3b82f6;"></div> Blue: <span id="pctBlue">{{ analytics.color_percentages.Blue }}</span>%
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#10b981;"></div> Green: {{ analytics.color_percentages.Green }}%
+      <div class="legend-dot" style="background:#10b981;"></div> Green: <span id="pctGreen">{{ analytics.color_percentages.Green }}</span>%
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#cfcdc4;"></div> None: {{ analytics.color_percentages.None }}%
+      <div class="legend-dot" style="background:#cfcdc4;"></div> None: <span id="pctNone">{{ analytics.color_percentages.None }}</span>%
     </div>
   </div>
 </div>
@@ -194,7 +194,7 @@
           <th>Total</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="recentDrawsBody">
         {% for row in recent_draws %}
         <tr>
           <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">#{{ row.id }}</td>
@@ -232,57 +232,111 @@
 <!-- Live Auto-Refresh Script -->
 <script>
   const currentTimeFilter = {{ selected_time }};
-  function pollLatestStats() {
-    fetch('/api/stats?time=' + currentTimeFilter)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById('statTotalDraws').innerText = data.total_draws;
-          document.getElementById('statAvgTotal').innerText = data.avg_total;
+  const POLL_MS = 5000;
 
-          // Update heatmap cells
-          if (data.ball_freq) {
-            for (let i = 1; i <= 49; i++) {
-              const countElem = document.getElementById('heatmap-count-' + i);
-              if (countElem) {
-                countElem.innerText = (data.ball_freq[i] || 0) + 'x';
-              }
-            }
-          }
+  const RED_BALLS = [1, 13, 25, 37, 4, 16, 28, 40, 7, 19, 31, 43, 10, 22, 34, 46];
+  const BLUE_BALLS = [2, 14, 26, 38, 5, 17, 29, 41, 8, 20, 32, 44, 11, 23, 35, 47];
+  const GREEN_BALLS = [3, 15, 27, 39, 6, 18, 30, 42, 9, 21, 33, 45, 12, 24, 36, 48];
 
-          if (data.latest_draw) {
-            const latest = data.latest_draw;
-            document.getElementById('latestDrawId').innerText = '#' + latest.id;
-            document.getElementById('latestDate').innerText = formatLocalTime(latest.date);
-            document.getElementById('latestTotal').innerText = latest.total;
-            document.getElementById('latestHlm').innerText = 'Range: ' + latest.hi_lo_mid + ' (Total: ' + latest.total + ')';
-            document.getElementById('latestColor').innerText = 'Dominant: ' + latest.colour;
-
-            // Update balls
-            const ballsContainer = document.getElementById('latestBalls');
-            if (ballsContainer && latest.balls) {
-              let html = '';
-              latest.balls.forEach(val => {
-                let clr = 'unknown';
-                const num = parseInt(val);
-                const redTup = [1, 13, 25, 37, 4, 16, 28, 40, 7, 19, 31, 43, 10, 22, 34, 46];
-                const blueTup = [2, 14, 26, 38, 5, 17, 29, 41, 8, 20, 32, 44, 11, 23, 35, 47];
-                const greenTup = [3, 15, 27, 39, 6, 18, 30, 42, 9, 21, 33, 45, 12, 24, 36, 48];
-                if (redTup.includes(num)) clr = 'red';
-                else if (blueTup.includes(num)) clr = 'blue';
-                else if (greenTup.includes(num)) clr = 'green';
-                else if (num === 49) clr = 'yellow';
-
-                html += `<div class="ball ball-large ball-${clr}">${num}</div>`;
-              });
-              ballsContainer.innerHTML = html;
-            }
-          }
-        }
-      })
-      .catch(err => console.log("Poll error:", err));
+  function ballColor(value) {
+    const num = parseInt(value);
+    if (RED_BALLS.includes(num)) return 'red';
+    if (BLUE_BALLS.includes(num)) return 'blue';
+    if (GREEN_BALLS.includes(num)) return 'green';
+    if (num === 49) return 'yellow';
+    return 'unknown';
   }
 
-  setInterval(pollLatestStats, 5000);
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = value;
+  }
+
+  function renderBalls(balls, large) {
+    const size = large ? ' ball-large' : '';
+    return balls
+      .map(val => `<div class="ball ball-${ballColor(val)}${size}">${val}</div>`)
+      .join('');
+  }
+
+  function rangeBadge(hlm) {
+    const cls = hlm === 'Hi' ? 'badge-hi' : hlm === 'Lo' ? 'badge-lo' : 'badge-mid';
+    return `<span class="badge ${cls}">${hlm}</span>`;
+  }
+
+  function renderRecentDraws(rows) {
+    const body = document.getElementById('recentDrawsBody');
+    if (!body || !rows) return;
+    body.innerHTML = rows.map(row => `
+      <tr>
+        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #a5b4fc;">#${row.id}</td>
+        <td style="color: var(--text-muted);">${formatLocalTime(row.date)}</td>
+        <td><div class="balls-row">${renderBalls(row.balls, false)}</div></td>
+        <td><span class="pill pill-${(row.colour || 'none').toLowerCase()}">${row.colour || 'None'}</span></td>
+        <td>${rangeBadge(row.hi_lo_mid)}</td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">${row.total}</td>
+      </tr>
+    `).join('');
+  }
+
+  function pollLatestStats() {
+    fetch('/api/stats?time=' + currentTimeFilter, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status !== 'success') return;
+
+        setText('statTotalDraws', data.total_draws);
+        setText('statAvgTotal', data.avg_total);
+
+        if (data.hi_lo_mid) {
+          setText('countHi', data.hi_lo_mid.Hi);
+          setText('countLo', data.hi_lo_mid.Lo);
+          setText('countMid', data.hi_lo_mid.Mid);
+        }
+
+        if (data.color_counts) {
+          setText('countRed', data.color_counts.Red);
+          setText('countBlue', data.color_counts.Blue);
+          setText('countGreen', data.color_counts.Green);
+          setText('countNone', data.color_counts.None);
+        }
+
+        if (data.color_percentages) {
+          ['Red', 'Blue', 'Green', 'None'].forEach(name => {
+            const pct = data.color_percentages[name] || 0;
+            setText('pct' + name, pct);
+            const segment = document.getElementById('seg' + name);
+            if (segment) segment.style.width = pct + '%';
+          });
+        }
+
+        // Update heatmap cells
+        if (data.ball_freq) {
+          for (let i = 1; i <= 49; i++) {
+            setText('heatmap-count-' + i, (data.ball_freq[i] || 0) + 'x');
+          }
+        }
+
+        const latest = data.latest_draw;
+        if (latest) {
+          setText('latestDrawId', '#' + latest.id);
+          setText('latestDate', formatLocalTime(latest.date));
+          setText('latestTotal', latest.total);
+          setText('latestHlm', 'Range: ' + latest.hi_lo_mid + ' (Total: ' + latest.total + ')');
+          setText('latestColor', 'Dominant: ' + latest.colour);
+
+          const ballsContainer = document.getElementById('latestBalls');
+          if (ballsContainer && latest.balls) {
+            ballsContainer.innerHTML = renderBalls(latest.balls, true);
+          }
+        }
+
+        renderRecentDraws(data.recent_draws);
+      })
+      .catch(err => console.log('Poll error:', err));
+  }
+
+  pollLatestStats();
+  setInterval(pollLatestStats, POLL_MS);
 </script>
 {% endblock %}

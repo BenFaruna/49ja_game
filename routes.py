@@ -236,6 +236,33 @@ def export_csv():
         return "Failed to generate CSV export.", 500
 
 
+def serialize_draw(draw):
+    """JSON shape used by the latest-draw banner and the recent draws table."""
+    if not draw:
+        return None
+    return {
+        "id": draw.id,
+        "date": draw.date.strftime("%Y-%m-%dT%H:%M:%SZ") if draw.date else None,
+        "balls": [
+            draw.first,
+            draw.second,
+            draw.third,
+            draw.fourth,
+            draw.fifth,
+            draw.sixth,
+        ],
+        "colour": draw.colour,
+        "total": draw.total,
+        "hi_lo_mid": draw.hi_lo_mid,
+        "counts": {
+            "Red": draw.r_count,
+            "Green": draw.g_count,
+            "Blue": draw.b_count,
+            "Yellow": draw.y_count,
+        },
+    }
+
+
 @router.route("/api/stats")
 def api_stats():
     """JSON Endpoint for Live Dashboard Auto-Refresh (Supports ?time=X)"""
@@ -244,33 +271,8 @@ def api_stats():
     try:
         analytics = storage.analytics(hours)
 
-        latest_rows = storage.recent(1)
-        analytics["latest_draw"] = latest_rows[0] if latest_rows else None
-
-        latest = analytics["latest_draw"]
-        latest_dict = None
-        if latest:
-            latest_dict = {
-                "id": latest.id,
-                "date": latest.date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "balls": [
-                    latest.first,
-                    latest.second,
-                    latest.third,
-                    latest.fourth,
-                    latest.fifth,
-                    latest.sixth,
-                ],
-                "colour": latest.colour,
-                "total": latest.total,
-                "hi_lo_mid": latest.hi_lo_mid,
-                "counts": {
-                    "Red": latest.r_count,
-                    "Green": latest.g_count,
-                    "Blue": latest.b_count,
-                    "Yellow": latest.y_count,
-                },
-            }
+        recent_draws = storage.recent(10)
+        latest_dict = serialize_draw(recent_draws[0]) if recent_draws else None
 
         return jsonify(
             {
@@ -278,6 +280,7 @@ def api_stats():
                 "time_filter": hours,
                 "total_draws": analytics["total_draws"],
                 "latest_draw": latest_dict,
+                "recent_draws": [serialize_draw(draw) for draw in recent_draws],
                 "color_counts": analytics["color_counts"],
                 "color_percentages": analytics["color_percentages"],
                 "hi_lo_mid": analytics["hi_lo_mid"],
